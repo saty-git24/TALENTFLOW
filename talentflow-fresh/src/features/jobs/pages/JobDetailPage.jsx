@@ -1,0 +1,381 @@
+import React from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { 
+  ArrowLeft, 
+  Edit, 
+  Archive, 
+  ArchiveRestore,
+  MapPin, 
+  DollarSign, 
+  Calendar, 
+  Users,
+  FileCheck,
+  Plus
+} from 'lucide-react';
+import { Button } from '../../../components/ui/Button.jsx';
+import { Card, CardHeader, CardContent, CardTitle } from '../../../components/ui/Card.jsx';
+import { Badge } from '../../../components/ui/Badge.jsx';
+import { LoadingPage } from '../../../components/common/LoadingSpinner.jsx';
+import { JobModal } from '../components/JobModal.jsx';
+import { useJobs } from '../hooks/useJobs.js';
+import { useCandidatesStore } from '../../../store/candidatesStore.js';
+import { formatDate, formatRelativeTime } from '../../../utils/helpers.js';
+import { CANDIDATE_STAGE_LABELS } from '../../../utils/constants.js';
+
+const JobDetailPage = () => {
+  const { jobId } = useParams();
+  const navigate = useNavigate();
+  const [editingJob, setEditingJob] = React.useState(null);
+  const [job, setJob] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  const { updateJob, archiveJob, unarchiveJob } = useJobs();
+  const { candidates } = useCandidatesStore();
+
+  // Load job details
+  React.useEffect(() => {
+    const loadJob = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/jobs/${jobId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setJob(data.job);
+        } else {
+          throw new Error('Job not found');
+        }
+      } catch (error) {
+        console.error('Failed to load job:', error);
+        // Could show error state here
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (jobId) {
+      loadJob();
+    }
+  }, [jobId]);
+
+  // Get candidates for this job
+  const jobCandidates = React.useMemo(() => {
+    return candidates.filter(candidate => candidate.jobId === jobId);
+  }, [candidates, jobId]);
+
+  // Get candidate stats by stage
+  const candidateStats = React.useMemo(() => {
+    const stats = {};
+    Object.keys(CANDIDATE_STAGE_LABELS).forEach(stage => {
+      stats[stage] = jobCandidates.filter(c => c.stage === stage).length;
+    });
+    return stats;
+  }, [jobCandidates]);
+
+  const handleUpdateJob = async (jobData) => {
+    if (editingJob) {
+      await updateJob(editingJob.id, jobData);
+      setJob({ ...job, ...jobData });
+      setEditingJob(null);
+    }
+  };
+
+  const handleArchive = async () => {
+    if (window.confirm('Are you sure you want to archive this job?')) {
+      await archiveJob(job.id);
+      setJob({ ...job, status: 'archived' });
+    }
+  };
+
+  const handleUnarchive = async () => {
+    await unarchiveJob(job.id);
+    setJob({ ...job, status: 'active' });
+  };
+
+  if (loading) {
+    return <LoadingPage message="Loading job details..." />;
+  }
+
+  if (!job) {
+    return (
+      <div className="p-6 text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Job Not Found</h1>
+        <p className="text-gray-600 mb-6">The job you're looking for doesn't exist.</p>
+        <Link to="/jobs">
+          <Button>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Jobs
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const isArchived = job.status === 'archived';
+
+  return (
+    <div className="p-6 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
+          <Link to="/jobs">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Jobs
+            </Button>
+          </Link>
+          
+          <div>
+            <div className="flex items-center space-x-3 mb-1">
+              <h1 className="text-2xl font-bold text-gray-900">{job.title}</h1>
+              <Badge variant={isArchived ? 'secondary' : 'success'}>
+                {isArchived ? 'Archived' : 'Active'}
+              </Badge>
+            </div>
+            <p className="text-gray-600">Job ID: {job.id}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            onClick={() => setEditingJob(job)}
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Edit
+          </Button>
+          
+          {isArchived ? (
+            <Button
+              variant="outline"
+              onClick={handleUnarchive}
+            >
+              <ArchiveRestore className="w-4 h-4 mr-2" />
+              Unarchive
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={handleArchive}
+            >
+              <Archive className="w-4 h-4 mr-2" />
+              Archive
+            </Button>
+          )}
+          
+          <Link to={`/assessments/${job.id}`}>
+            <Button>
+              <FileCheck className="w-4 h-4 mr-2" />
+              Assessment
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Job Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Job Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <MapPin className="w-4 h-4" />
+                  <span>{job.location || 'Not specified'}</span>
+                </div>
+                
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <Users className="w-4 h-4" />
+                  <span>{job.department || 'Not specified'}</span>
+                </div>
+                
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <Calendar className="w-4 h-4" />
+                  <span>{job.type || 'Full-time'}</span>
+                </div>
+                
+                {job.salary && (job.salary.min || job.salary.max) && (
+                  <div className="flex items-center space-x-2 text-gray-600">
+                    <DollarSign className="w-4 h-4" />
+                    <span>
+                      {job.salary.min && job.salary.max ? (
+                        `${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}`
+                      ) : job.salary.min ? (
+                        `From ${job.salary.min.toLocaleString()}`
+                      ) : (
+                        `Up to ${job.salary.max.toLocaleString()}`
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Tags */}
+              {job.tags && job.tags.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Skills & Tags</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {job.tags.map(tag => (
+                      <Badge key={tag} variant="secondary">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              {job.description && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Description</h4>
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-gray-600 whitespace-pre-wrap">{job.description}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Requirements */}
+              {job.requirements && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Requirements</h4>
+                  <div className="prose prose-sm max-w-none">
+                    <div className="text-gray-600 whitespace-pre-wrap">
+                      {job.requirements.split('\n').map((line, index) => (
+                        <div key={index} className="mb-1">
+                          {line.startsWith('•') ? line : `• ${line}`}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Metadata */}
+              <div className="pt-4 border-t border-gray-200">
+                <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
+                  <div>
+                    <span className="font-medium">Created:</span>{' '}
+                    {formatDate(job.createdAt)}
+                  </div>
+                  <div>
+                    <span className="font-medium">Last Updated:</span>{' '}
+                    {formatRelativeTime(job.updatedAt)}
+                  </div>
+                  <div>
+                    <span className="font-medium">Slug:</span>{' '}
+                    <code className="bg-gray-100 px-1 rounded">{job.slug}</code>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Candidate Stats */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Candidates ({jobCandidates.length})</CardTitle>
+              <Link to={`/candidates?jobId=${job.id}`}>
+                <Button size="sm" variant="outline">
+                  View All
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {Object.entries(CANDIDATE_STAGE_LABELS).map(([stage, label]) => (
+                  <div key={stage} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">{label}</span>
+                    <Badge variant="secondary" size="sm">
+                      {candidateStats[stage] || 0}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+              
+              {jobCandidates.length === 0 ? (
+                <div className="text-center py-6">
+                  <p className="text-gray-500 text-sm mb-3">No candidates yet</p>
+                  <Button size="sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Candidate
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <Link to={`/kanban?jobId=${job.id}`}>
+                    <Button size="sm" className="w-full">
+                      <Users className="w-4 h-4 mr-2" />
+                      View Kanban Board
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Link to={`/assessments/${job.id}`} className="block">
+                <Button variant="outline" className="w-full justify-start">
+                  <FileCheck className="w-4 h-4 mr-2" />
+                  Manage Assessment
+                </Button>
+              </Link>
+              
+              <Link to={`/candidates?jobId=${job.id}`} className="block">
+                <Button variant="outline" className="w-full justify-start">
+                  <Users className="w-4 h-4 mr-2" />
+                  View Candidates
+                </Button>
+              </Link>
+              
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => navigator.share?.({
+                  title: job.title,
+                  text: job.description,
+                  url: window.location.href
+                }) || navigator.clipboard?.writeText(window.location.href)}
+              >
+                Share Job
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Recent Activity placeholder */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-6">
+                <p className="text-gray-500 text-sm">No recent activity</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Edit Modal */}
+      <JobModal
+        isOpen={!!editingJob}
+        onClose={() => setEditingJob(null)}
+        onSubmit={handleUpdateJob}
+        job={editingJob}
+      />
+    </div>
+  );
+};
+
+export default JobDetailPage;
