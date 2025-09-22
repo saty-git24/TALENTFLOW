@@ -51,8 +51,6 @@ export const CandidateCard = ({
         isDragging && 'opacity-70 transform rotate-2 scale-105 z-50 shadow-xl',
         compact ? 'p-3' : 'p-4'
       )}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
     >
       <CardContent className={cn(compact ? 'p-4' : 'p-6')}>
         <div className={cn(
@@ -241,7 +239,7 @@ export const CandidateCard = ({
             isListView && compact ? 'ml-4 flex-shrink-0' : 'ml-4'
           )}>
             {/* Stage selector (always visible in compact mode) */}
-            {(compact || showActions) && (
+            {compact && (
               <Select
                 value={candidate.stage}
                 onChange={(e) => handleStageChange(e.target.value)}
@@ -261,10 +259,13 @@ export const CandidateCard = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowActions(!showActions)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowActions((prev) => !prev);
+                }}
                 className={cn(
                   'transition-opacity',
-                  showActions || compact ? 'opacity-100' : 'opacity-0'
+                  'opacity-100'
                 )}
               >
                 <MoreVertical className="w-4 h-4" />
@@ -272,33 +273,38 @@ export const CandidateCard = ({
 
               {/* Actions dropdown */}
               {showActions && (
-                <div className="absolute right-0 top-8 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-10">
-                  <button
-                    onClick={() => onEdit(candidate)}
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Candidate
-                  </button>
-                  
-                  <Link 
-                    to={`/candidates/${candidate.id}`}
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    View Profile
-                  </Link>
-                  
-                  <hr className="my-1 border-gray-200 dark:border-gray-600" />
-                  
-                  <button
-                    onClick={() => onDelete(candidate.id)}
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </button>
-                </div>
+                <>
+                  <div
+                    className="fixed inset-0 z-0"
+                    onClick={() => setShowActions(false)}
+                    aria-label="Close actions menu"
+                  />
+                  <div className="absolute right-0 top-8 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-10">
+                    <button
+                      onClick={() => { setShowActions(false); onEdit(candidate); }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Candidate
+                    </button>
+                    <Link 
+                      to={`/candidates/${candidate.id}`}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      onClick={() => setShowActions(false)}
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      View Profile
+                    </Link>
+                    <hr className="my-1 border-gray-200 dark:border-gray-600" />
+                    <button
+                      onClick={() => { setShowActions(false); onDelete(candidate.id); }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>

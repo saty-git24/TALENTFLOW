@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { CANDIDATE_STAGES } from '../utils/constants.js';
+import { isValidStageTransition, validateCandidateState } from '../utils/helpers.js';
 
 export const useCandidatesStore = create(
   devtools(
@@ -52,12 +53,27 @@ export const useCandidatesStore = create(
         const candidate = state.candidates.find(c => c.id === candidateId);
         if (!candidate) return state;
         
+        // Validate the stage transition
+        if (!isValidStageTransition(candidate.stage, newStage)) {
+          console.warn(`Invalid stage transition from ${candidate.stage} to ${newStage}`);
+          return state;
+        }
+        
+        const updatedCandidate = { ...candidate, stage: newStage, updatedAt: new Date() };
+        
+        // Validate overall candidate state
+        const validation = validateCandidateState(updatedCandidate);
+        if (!validation.isValid) {
+          console.warn('Candidate state validation failed:', validation.errors);
+          return state;
+        }
+        
         return {
           candidates: state.candidates.map(c => 
-            c.id === candidateId ? { ...c, stage: newStage, updatedAt: new Date() } : c
+            c.id === candidateId ? updatedCandidate : c
           ),
           currentCandidate: state.currentCandidate?.id === candidateId 
-            ? { ...state.currentCandidate, stage: newStage, updatedAt: new Date() }
+            ? updatedCandidate
             : state.currentCandidate
         };
       }),
@@ -109,13 +125,17 @@ export const useCandidatesStore = create(
         const stages = {};
         
         Object.values(CANDIDATE_STAGES).forEach(stage => {
-          stages[stage] = state.candidates.filter(candidate => 
-            candidate.stage === stage &&
-            (!state.filters.jobId || candidate.jobId === state.filters.jobId) &&
-            (!state.filters.search || 
-              candidate.name.toLowerCase().includes(state.filters.search.toLowerCase()) ||
-              candidate.email.toLowerCase().includes(state.filters.search.toLowerCase()))
-          );
+          stages[stage] = state.candidates.filter(candidate => {
+            const candidateJobId = candidate.jobId != null ? String(candidate.jobId) : '';
+            const filterJobId = state.filters.jobId != null ? String(state.filters.jobId) : '';
+            return (
+              candidate.stage === stage &&
+              (!filterJobId || candidateJobId === filterJobId) &&
+              (!state.filters.search || 
+                candidate.name.toLowerCase().includes(state.filters.search.toLowerCase()) ||
+                candidate.email.toLowerCase().includes(state.filters.search.toLowerCase()))
+            );
+          });
         });
         
         return stages;
@@ -129,10 +149,10 @@ export const useCandidatesStore = create(
           const matchesSearch = !filters.search || 
             candidate.name.toLowerCase().includes(filters.search.toLowerCase()) ||
             candidate.email.toLowerCase().includes(filters.search.toLowerCase());
-          
           const matchesStage = !filters.stage || candidate.stage === filters.stage;
-          const matchesJob = !filters.jobId || candidate.jobId === filters.jobId;
-          
+          const candidateJobId = candidate.jobId != null ? String(candidate.jobId) : '';
+          const filterJobId = filters.jobId != null ? String(filters.jobId) : '';
+          const matchesJob = !filterJobId || candidateJobId === filterJobId;
           return matchesSearch && matchesStage && matchesJob;
         });
       },

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Database Reset</title>
+</head>
+<body>
+    <h1>Resetting Database...</h1>
+    <div id="status">Processing...</div>
+    
+    <script type="module">
+        async function resetDatabase() {
+            try {
+                // Import the database functions
+                const { clearDatabase } = await import('./src/db/index.js');
+                
+                document.getElementById('status').innerHTML = 'Clearing database...';
+                
+                // Clear and reseed the database
+                await clearDatabase();
+                
+                document.getElementById('status').innerHTML = '✅ Database cleared and reseeded successfully!<br><br><a href="http://localhost:3001/candidates">Go to Candidates</a>';
+                
+                // Automatically redirect after 2 seconds
+                setTimeout(() => {
+                    window.location.href = 'http://localhost:3001/candidates';
+                }, 2000);
+                
+            } catch (error) {
+                document.getElementById('status').innerHTML = '❌ Error: ' + error.message;
+                console.error('Reset failed:', error);
+            }
+        }
+        
+        // Start the reset process immediately
+        resetDatabase();
+    </script>
+</body>
+</html>

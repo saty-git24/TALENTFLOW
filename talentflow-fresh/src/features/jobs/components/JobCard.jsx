@@ -43,8 +43,6 @@ export const JobCard = ({
         isListView && 'hover:bg-gray-50 dark:hover:bg-gray-800/50',
         isListView ? 'h-auto' : 'h-80 flex flex-col'
       )}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
     >
       <CardContent className={cn(
         isListView ? 'px-4 pt-3 pb-5' : 'px-6 pt-5 pb-8 flex-1 flex flex-col justify-between'
@@ -246,11 +244,8 @@ export const JobCard = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowActions(!showActions)}
-              className={cn(
-                'transition-opacity',
-                showActions ? 'opacity-100' : 'opacity-0'
-              )}
+              onClick={() => setShowActions((prev) => !prev)}
+              className={cn('transition-opacity', 'opacity-100')}
             >
               <MoreVertical className="w-4 h-4" />
             </Button>

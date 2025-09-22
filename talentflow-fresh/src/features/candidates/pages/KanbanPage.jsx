@@ -1,11 +1,12 @@
 import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Plus, Filter, X, ArrowLeft, List } from 'lucide-react';
+import { Filter, X, ArrowLeft, List } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.jsx';
 import { Select } from '../../../components/ui/Select.jsx';
 import { KanbanBoard } from '../components/KanbanBoard.jsx';
 import { useCandidatesStore } from '../../../store/candidatesStore.js';
 import { useJobsStore } from '../../../store/jobsStore.js';
+import { jobsApi } from '../../../api/jobs.js';
 import { useCandidates } from '../hooks/useCandidates.js';
 
 const KanbanPage = () => {
@@ -19,7 +20,16 @@ const KanbanPage = () => {
   });
 
   const { getCandidatesByStage, moveCandidateStage } = useCandidatesStore();
-  const { jobs } = useJobsStore();
+  const { jobs, setJobs } = useJobsStore();
+
+  // Load jobs on mount if not already loaded
+  React.useEffect(() => {
+    if (!jobs || jobs.length === 0) {
+      jobsApi.getJobs({ pageSize: 100 }).then(res => {
+        setJobs(res.jobs || []);
+      });
+    }
+  }, [jobs, setJobs]);
   const { loading, error, clearError, moveCandidateToStage } = useCandidates(filters);
 
   // Create jobs lookup
@@ -78,18 +88,13 @@ const KanbanPage = () => {
           </p>
         </div>
         
-        <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+        <div className="mt-4 sm:mt-0">
           <Button
             variant="outline"
             onClick={() => navigate('/candidates')}
           >
             <List className="w-4 h-4 mr-2" />
             List View
-          </Button>
-          
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Candidate
           </Button>
         </div>
       </div>
@@ -204,13 +209,9 @@ const KanbanPage = () => {
             <p className="text-gray-500">
               {filters.jobId 
                 ? 'No candidates have applied for this job yet.' 
-                : 'No candidates in the system. Add some candidates to get started.'
+                : 'No candidates in the system.'
               }
             </p>
-            <Button className="mt-4">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Candidate
-            </Button>
           </div>
         )}
       </div>

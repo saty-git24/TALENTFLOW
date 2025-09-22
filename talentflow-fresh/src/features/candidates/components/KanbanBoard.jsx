@@ -2,6 +2,7 @@ import React from 'react';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import { KanbanColumn } from './KanbanColumn.jsx';
 import { CANDIDATE_STAGES, CANDIDATE_STAGE_LABELS } from '../../../utils/constants.js';
+import { isValidStageTransition } from '../../../utils/helpers.js';
 
 export const KanbanBoard = ({
   candidatesByStage = {},
@@ -28,6 +29,13 @@ export const KanbanBoard = ({
     if (destination.droppableId !== source.droppableId) {
       const candidateId = parseInt(draggableId, 10);
       const newStage = destination.droppableId;
+      const oldStage = source.droppableId;
+      
+      // Validate stage transition
+      if (!isValidStageTransition(oldStage, newStage)) {
+        alert(`Invalid transition from ${CANDIDATE_STAGE_LABELS[oldStage]} to ${CANDIDATE_STAGE_LABELS[newStage]}`);
+        return;
+      }
       
       // Call the onStageChange function
       onStageChange(candidateId, newStage);

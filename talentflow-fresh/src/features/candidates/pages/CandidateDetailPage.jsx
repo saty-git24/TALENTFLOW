@@ -9,7 +9,6 @@ import {
   Briefcase,
   FileText,
   MessageSquare,
-  Edit,
   UserCheck
 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.jsx';
@@ -21,9 +20,11 @@ import { LoadingPage } from '../../../components/common/LoadingSpinner.jsx';
 import { useCandidatesStore } from '../../../store/candidatesStore.js';
 import { useJobsStore } from '../../../store/jobsStore.js';
 import { candidatesApi } from '../../../api/candidates.js';
-import { formatDate, formatRelativeTime, createMention } from '../../../utils/helpers.js';
+import { formatDate, formatRelativeTime, createMention, extractMentions, sortTimelineByHiringProcess, isValidStageTransition, getNextPossibleStages } from '../../../utils/helpers.js';
 import { CANDIDATE_STAGES, CANDIDATE_STAGE_LABELS, CANDIDATE_STAGE_COLORS, MOCK_USERS } from '../../../utils/constants.js';
 import { useApi } from '../../../hooks/useApi.js';
+import { MentionInput } from '../../../components/ui/MentionInput.jsx';
+import { MentionText } from '../../../components/ui/MentionText.jsx';
 
 const CandidateDetailPage = () => {
   const { candidateId } = useParams();
@@ -33,6 +34,7 @@ const CandidateDetailPage = () => {
   const [notes, setNotes] = React.useState([]);
   const [newNote, setNewNote] = React.useState('');
   const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
   const [addingNote, setAddingNote] = React.useState(false);
 
   const { updateCandidate, moveCandidateStage } = useCandidatesStore();
@@ -56,6 +58,7 @@ const CandidateDetailPage = () => {
           setNotes(notesResponse.notes);
         } catch (error) {
           console.error('Failed to load candidate data:', error);
+          setError(error.message || 'Failed to load candidate data');
         } finally {
           setLoading(false);
         }
@@ -67,6 +70,12 @@ const CandidateDetailPage = () => {
 
   const handleStageChange = async (newStage) => {
     if (candidate && newStage !== candidate.stage) {
+      // Validate the stage transition
+      if (!isValidStageTransition(candidate.stage, newStage)) {
+        alert(`Invalid stage transition from ${CANDIDATE_STAGE_LABELS[candidate.stage]} to ${CANDIDATE_STAGE_LABELS[newStage]}`);
+        return;
+      }
+      
       try {
         await makeRequest(() => 
           candidatesApi.moveCandidateStage(candidateId, newStage, 'user')
@@ -82,6 +91,7 @@ const CandidateDetailPage = () => {
         setTimeline(timelineResponse.timeline);
       } catch (error) {
         console.error('Failed to update candidate stage:', error);
+        alert('Failed to update candidate stage. Please try again.');
       }
     }
   };
@@ -91,10 +101,11 @@ const CandidateDetailPage = () => {
 
     setAddingNote(true);
     try {
+      const mentions = extractMentions(newNote);
       const noteData = {
         content: newNote,
         authorId: 'current-user', // In real app, get from auth
-        mentions: [] // Could extract mentions from content
+        mentions: mentions
       };
 
       const response = await makeRequest(() =>
@@ -117,8 +128,17 @@ const CandidateDetailPage = () => {
   if (!candidate) {
     return (
       <div className="p-6 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Candidate Not Found</h1>
-        <p className="text-gray-600 mb-6">The candidate you're looking for doesn't exist.</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          {error ? 'Error Loading Candidate' : 'Candidate Not Found'}
+        </h1>
+        <p className="text-gray-600 mb-6">
+          {error || "The candidate you're looking for doesn't exist."}
+        </p>
+        {error && (
+          <p className="text-red-600 text-sm mb-4">
+            ID: {candidateId}
+          </p>
+        )}
         <Link to="/candidates">
           <Button>
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -163,17 +183,25 @@ const CandidateDetailPage = () => {
             onChange={(e) => handleStageChange(e.target.value)}
             className="w-40"
           >
-            {Object.entries(CANDIDATE_STAGE_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
+            {getNextPossibleStages(candidate?.stage || '').length > 0 ? (
+              // Show current stage + next possible stages
+              <>
+                <option value={candidate?.stage}>
+                  {CANDIDATE_STAGE_LABELS[candidate?.stage]} (Current)
+                </option>
+                {getNextPossibleStages(candidate?.stage || '').map(stage => (
+                  <option key={stage} value={stage}>
+                    {CANDIDATE_STAGE_LABELS[stage]}
+                  </option>
+                ))}
+              </>
+            ) : (
+              // Terminal stage - no changes allowed
+              <option value={candidate?.stage}>
+                {CANDIDATE_STAGE_LABELS[candidate?.stage]} (Final)
               </option>
-            ))}
+            )}
           </Select>
-          
-          <Button>
-            <Edit className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
         </div>
       </div>
 
@@ -285,16 +313,14 @@ const CandidateDetailPage = () => {
             <CardContent>
               {/* Add Note */}
               <div className="mb-6">
-                <Textarea
+                <MentionInput
                   placeholder="Add a note about this candidate... Use @name to mention team members"
                   value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
+                  onChange={setNewNote}
                   rows={3}
+                  onSubmit={handleAddNote}
                 />
                 <div className="flex items-center justify-between mt-2">
-                  <p className="text-xs text-gray-500">
-                    Tip: Use @name to mention team members
-                  </p>
                   <Button 
                     size="sm"
                     onClick={handleAddNote}
@@ -323,12 +349,9 @@ const CandidateDetailPage = () => {
                           {formatRelativeTime(note.createdAt)}
                         </span>
                       </div>
-                      <div 
-                        className="text-gray-700 text-sm"
-                        dangerouslySetInnerHTML={{
-                          __html: createMention(note.content, MOCK_USERS)
-                        }}
-                      />
+                      <MentionText className="text-gray-700 text-sm">
+                        {note.content}
+                      </MentionText>
                     </div>
                   ))
                 ) : (
@@ -351,7 +374,7 @@ const CandidateDetailPage = () => {
             <CardContent>
               <div className="space-y-4">
                 {timeline.length > 0 ? (
-                  timeline.map(entry => (
+                  sortTimelineByHiringProcess(timeline).map(entry => (
                     <div key={entry.id} className="timeline-item">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">

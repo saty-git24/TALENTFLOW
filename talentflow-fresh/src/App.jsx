@@ -11,6 +11,7 @@ const CandidateDetailPage = React.lazy(() => import('./features/candidates/pages
 const KanbanPage = React.lazy(() => import('./features/candidates/pages/KanbanPage.jsx'));
 const AssessmentPage = React.lazy(() => import('./features/assessments/pages/AssessmentPage.jsx'));
 const AssessmentTakePage = React.lazy(() => import('./features/assessments/pages/AssessmentTakePage.jsx'));
+const DatabaseReset = React.lazy(() => import('./components/DatabaseReset.jsx'));
 
 function App() {
   return (
@@ -195,6 +196,15 @@ function App() {
           />
           
           <Route
+            path="reset-database"
+            element={
+              <React.Suspense fallback={<div className="p-6">Loading...</div>}>
+                <DatabaseReset />
+              </React.Suspense>
+            }
+          />
+          
+          <Route
   path="settings"
   element={
     <div className="p-6 max-w-6xl mx-auto">
@@ -227,10 +237,41 @@ function App() {
           <div className="bg-white p-6 rounded-lg border">
             <h3 className="text-lg font-semibold mb-4">Data Management</h3>
             <div className="grid grid-cols-2 gap-4">
-              <button className="p-3 border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50">
+              <button 
+                className="p-3 border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50"
+                onClick={async () => {
+                  try {
+                    const { exportData } = await import('./db/index.js');
+                    const data = await exportData();
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `talentflow-export-${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  } catch (error) {
+                    alert('Export failed: ' + error.message);
+                  }
+                }}
+              >
                 Export Data
               </button>
-              <button className="p-3 border border-red-300 text-red-600 rounded-md hover:bg-red-50">
+              <button 
+                className="p-3 border border-red-300 text-red-600 rounded-md hover:bg-red-50"
+                onClick={async () => {
+                  if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                    try {
+                      const { clearDatabase } = await import('./db/index.js');
+                      await clearDatabase();
+                      alert('Database cleared and reseeded successfully!');
+                      window.location.reload();
+                    } catch (error) {
+                      alert('Clear failed: ' + error.message);
+                    }
+                  }
+                }}
+              >
                 Clear Database
               </button>
             </div>

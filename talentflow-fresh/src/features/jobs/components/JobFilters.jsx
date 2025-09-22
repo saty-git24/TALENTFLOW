@@ -12,8 +12,13 @@ export const JobFilters = ({
   onFiltersChange,
   onClearFilters
 }) => {
-  const debouncedSearch = useDebounce(filters.search, 300);
+  // 🔹 Local state for search input
+  const [searchTerm, setSearchTerm] = React.useState(filters.search || "");
 
+  // 🔹 Debounced value
+  const debouncedSearch = useDebounce(searchTerm, 300);
+
+  // 🔹 Push debounced search up to parent
   React.useEffect(() => {
     if (debouncedSearch !== filters.search) {
       onFiltersChange({ search: debouncedSearch });
@@ -37,7 +42,6 @@ export const JobFilters = ({
           <Filter className="w-5 h-5 text-primary-500" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Filters</h3>
         </div>
-        
         {hasActiveFilters && (
           <Button
             variant="ghost"
@@ -54,13 +58,29 @@ export const JobFilters = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-          <Input
-            placeholder="Search jobs..."
-            value={filters.search}
-            onChange={(e) => onFiltersChange({ search: e.target.value })}
-            className="pl-10"
-          />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
+          <div className="relative w-full">
+            <input
+              type="text"
+              placeholder="Search jobs..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="block w-full pl-10 pr-10 py-3 rounded-lg border border-white focus:border-primary-500 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm transition-all duration-200"
+              style={{ boxSizing: 'border-box' }}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none z-20"
+                style={{ pointerEvents: 'auto' }}
+                onClick={() => setSearchTerm("")}
+                tabIndex={0}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Status */}

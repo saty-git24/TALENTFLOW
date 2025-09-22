@@ -1,10 +1,11 @@
 import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Plus, Users, LayoutGrid } from 'lucide-react';
+import { Users, LayoutGrid } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.jsx';
 import { VirtualizedList } from '../components/VirtualizedList.jsx';
 import { useCandidates } from '../hooks/useCandidates.js';
 import { useJobsStore } from '../../../store/jobsStore.js';
+import { jobsApi } from '../../../api/jobs.js';
 
 const CandidatesPage = () => {
   const [searchParams] = useSearchParams();
@@ -25,7 +26,16 @@ const CandidatesPage = () => {
     clearError
   } = useCandidates(filters);
 
-  const { jobs } = useJobsStore();
+  const { jobs, setJobs } = useJobsStore();
+
+  // Load jobs on mount if not already loaded
+  React.useEffect(() => {
+    if (!jobs || jobs.length === 0) {
+      jobsApi.getJobs({ pageSize: 100 }).then(res => {
+        setJobs(res.jobs || []);
+      });
+    }
+  }, [jobs, setJobs]);
   
   // Create jobs lookup for faster access
   const jobsLookup = React.useMemo(() => {
@@ -67,18 +77,13 @@ const CandidatesPage = () => {
           </p>
         </div>
         
-        <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+        <div className="mt-4 sm:mt-0">
           <Button 
             variant="outline"
             onClick={() => navigate('/kanban')}
           >
             <LayoutGrid className="w-4 h-4 mr-2" />
             Kanban View
-          </Button>
-          
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Candidate
           </Button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { format, formatDistanceToNow } from 'date-fns';
 import clsx from 'clsx';
+import { CANDIDATE_STAGES, HIRING_PROCESS_ORDER, STAGE_TRANSITIONS, TERMINAL_STAGES } from './constants';
 
 export const cn = clsx;
 
@@ -197,4 +198,108 @@ export const extractMentions = (text) => {
   }
   
   return mentions;
+};
+
+// Hiring Process Validation Functions
+
+/**
+ * Check if a stage transition is valid according to hiring process rules
+ */
+export const isValidStageTransition = (fromStage, toStage) => {
+  // Can't transition from terminal stages
+  if (TERMINAL_STAGES.includes(fromStage)) {
+    return false;
+  }
+  
+  // Check if transition is allowed
+  const allowedTransitions = STAGE_TRANSITIONS[fromStage] || [];
+  return allowedTransitions.includes(toStage);
+};
+
+/**
+ * Get the next possible stages for a given current stage
+ */
+export const getNextPossibleStages = (currentStage) => {
+  return STAGE_TRANSITIONS[currentStage] || [];
+};
+
+/**
+ * Check if a stage can only move forward (not backward) in the hiring process
+ */
+export const isProgressiveStage = (fromStage, toStage) => {
+  const fromIndex = HIRING_PROCESS_ORDER.indexOf(fromStage);
+  const toIndex = HIRING_PROCESS_ORDER.indexOf(toStage);
+  
+  // Special case: can always reject from any stage
+  if (toStage === CANDIDATE_STAGES.REJECTED) {
+    return true;
+  }
+  
+  // Normal progression should be forward only
+  return toIndex > fromIndex;
+};
+
+/**
+ * Get the stage order index for timeline sorting
+ */
+export const getStageOrderIndex = (stage) => {
+  const index = HIRING_PROCESS_ORDER.indexOf(stage);
+  // Rejected can happen at any stage, so we put it at the end for sorting
+  if (stage === CANDIDATE_STAGES.REJECTED) {
+    return HIRING_PROCESS_ORDER.length;
+  }
+  return index !== -1 ? index : 999;
+};
+
+/**
+ * Sort timeline entries according to proper hiring process order
+ */
+export const sortTimelineByHiringProcess = (timelineEntries) => {
+  return [...timelineEntries].sort((a, b) => {
+    const aOrder = getStageOrderIndex(a.stage);
+    const bOrder = getStageOrderIndex(b.stage);
+    
+    if (aOrder !== bOrder) {
+      return aOrder - bOrder;
+    }
+    
+    // If same stage order, sort by timestamp
+    return new Date(a.timestamp) - new Date(b.timestamp);
+  });
+};
+
+/**
+ * Validate candidate state consistency
+ */
+export const validateCandidateState = (candidate) => {
+  const errors = [];
+  
+  // Check for impossible state combinations
+  if (candidate.stage === CANDIDATE_STAGES.HIRED && 
+      candidate.timeline?.some(entry => entry.stage === CANDIDATE_STAGES.REJECTED)) {
+    errors.push("Candidate cannot be both hired and rejected");
+  }
+  
+  if (candidate.stage === CANDIDATE_STAGES.REJECTED && 
+      candidate.timeline?.some(entry => entry.stage === CANDIDATE_STAGES.HIRED)) {
+    errors.push("Candidate cannot be both rejected and hired");
+  }
+  
+  // Check timeline progression
+  if (candidate.timeline) {
+    const sortedTimeline = sortTimelineByHiringProcess(candidate.timeline);
+    for (let i = 1; i < sortedTimeline.length; i++) {
+      const prevStage = sortedTimeline[i - 1].stage;
+      const currStage = sortedTimeline[i].stage;
+      
+      if (!isValidStageTransition(prevStage, currStage)) {
+        errors.push(`Invalid stage transition from ${prevStage} to ${currStage}`);
+      }
+    }
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
 };

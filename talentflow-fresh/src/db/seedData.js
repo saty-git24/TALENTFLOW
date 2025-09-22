@@ -116,7 +116,6 @@ const generateRandomCandidate = (jobId, index) => {
     .slice(0, Math.floor(Math.random() * 8) + 3);
   
   return {
-    id: generateId(),
     name,
     email,
     phone: `+1-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`,

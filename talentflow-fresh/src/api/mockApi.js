@@ -1,6 +1,7 @@
 import { http } from 'msw';
 import { setupWorker } from 'msw/browser';
 import { db } from '../db/index.js';
+import { isValidStageTransition } from '../utils/helpers.js';
 import { simulateNetworkDelay, simulateNetworkError, buildQueryString, paginateArray } from '../utils/helpers.js';
 
 // Configurable MSW simulation settings (use Vite env variable VITE_MSW_ERROR_RATE)
@@ -268,8 +269,8 @@ const candidatesHandlers = [
         const url = new URL(request.url);
         const search = url.searchParams.get('search') || '';
         const stage = url.searchParams.get('stage') || '';
-        const jobIdRaw = url.searchParams.get('jobId');
-        const jobId = jobIdRaw !== null && jobIdRaw !== '' ? Number(jobIdRaw) : '';
+  const jobIdRaw = url.searchParams.get('jobId');
+  const jobId = jobIdRaw !== null && jobIdRaw !== '' ? String(jobIdRaw) : '';
         const page = parseInt(url.searchParams.get('page')) || 1;
         const pageSize = parseInt(url.searchParams.get('pageSize')) || 10;
 
@@ -288,7 +289,7 @@ const candidatesHandlers = [
         }
 
         if (jobId !== '') {
-          candidates = candidates.filter(candidate => candidate.jobId === jobId);
+          candidates = candidates.filter(candidate => String(candidate.jobId) === jobId);
         }
 
         // Sort by most recent first
@@ -320,6 +321,53 @@ const candidatesHandlers = [
     }
   }),
 
+  // GET /api/candidates/:id - Get single candidate
+  http.get('/api/candidates/:id', async ({ params }) => {
+    try {
+      const result = await createApiResponse(async () => {
+        const id = params.id;
+        console.log('Looking for candidate with ID:', id);
+        
+        let candidate;
+        
+        // Try numeric ID first
+        if (!isNaN(id)) {
+          candidate = await db.candidates.get(Number(id));
+          console.log('Tried numeric lookup, found:', candidate);
+        }
+        
+        // If not found, try string ID lookup
+        if (!candidate) {
+          candidate = await db.candidates.where('id').equals(id).first();
+          console.log('Tried string lookup, found:', candidate);
+        }
+        
+        // If still not found, try string comparison
+        if (!candidate) {
+          candidate = await db.candidates.where('id').equals(String(id)).first();
+          console.log('Tried string conversion lookup, found:', candidate);
+        }
+        
+        if (!candidate) {
+          throw new Error('Candidate not found');
+        }
+        
+        return { candidate };
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      console.error('Error finding candidate:', error);
+      return new Response(JSON.stringify({ error: 'Candidate not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }),
+
   // PATCH /api/candidates/:id - Update candidate
   http.patch('/api/candidates/:id', async ({ request, params }) => {
     try {
@@ -327,6 +375,17 @@ const candidatesHandlers = [
         const updates = await request.json();
         const id = Number(params.id);
         const oldCandidate = await db.candidates.get(id);
+
+        if (!oldCandidate) {
+          throw new Error('Candidate not found');
+        }
+
+        // If stage changed, validate the transition
+        if (updates.stage && updates.stage !== oldCandidate.stage) {
+          if (!isValidStageTransition(oldCandidate.stage, updates.stage)) {
+            throw new Error(`Invalid stage transition from ${oldCandidate.stage} to ${updates.stage}`);
+          }
+        }
 
         await db.candidates.update(id, updates);
         const candidate = await db.candidates.get(id);
@@ -354,11 +413,161 @@ const candidatesHandlers = [
         headers: { 'Content-Type': 'application/json' }
       });
     }
+  }),
+
+  // GET /api/candidates/:id/timeline - Get candidate timeline
+  http.get('/api/candidates/:id/timeline', async ({ params }) => {
+    try {
+      const result = await createApiResponse(async () => {
+        const candidateId = params.id;
+        let timeline = await db.candidateTimeline
+          .where('candidateId')
+          .equals(candidateId)
+          .reverse()
+          .sortBy('changedAt');
+          
+        // If no timeline found with string ID, try numeric
+        if (timeline.length === 0 && !isNaN(candidateId)) {
+          timeline = await db.candidateTimeline
+            .where('candidateId')
+            .equals(Number(candidateId))
+            .reverse()
+            .sortBy('changedAt');
+        }
+        
+        return { timeline };
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({ error: 'Failed to fetch timeline' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }),
+
+  // GET /api/candidates/:id/notes - Get candidate notes
+  http.get('/api/candidates/:id/notes', async ({ params }) => {
+    try {
+      const result = await createApiResponse(async () => {
+        const candidateId = params.id;
+        let notes = await db.candidateNotes
+          .where('candidateId')
+          .equals(candidateId)
+          .reverse()
+          .sortBy('createdAt');
+          
+        // If no notes found with string ID, try numeric
+        if (notes.length === 0 && !isNaN(candidateId)) {
+          notes = await db.candidateNotes
+            .where('candidateId')
+            .equals(Number(candidateId))
+            .reverse()
+            .sortBy('createdAt');
+        }
+        
+        return { notes };
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({ error: 'Failed to fetch notes' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }),
+
+  // POST /api/candidates/:id/notes - Add candidate note
+  http.post('/api/candidates/:id/notes', async ({ request, params }) => {
+    try {
+      const result = await createApiResponse(async () => {
+        const noteData = await request.json();
+        noteData.candidateId = params.id;
+        
+        const id = await db.candidateNotes.add(noteData);
+        const note = await db.candidateNotes.get(id);
+        
+        return { note };
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({ error: 'Failed to add note' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
   })
 ];
 
 // Assessments API handlers
 const assessmentsHandlers = [
+  // GET /api/debug/database - Debug endpoint to check database status
+  http.get('/api/debug/database', async () => {
+    try {
+      const result = await createApiResponse(async () => {
+        const jobsCount = await db.jobs.count();
+        const candidatesCount = await db.candidates.count();
+        const timelineCount = await db.candidateTimeline.count();
+        const notesCount = await db.candidateNotes.count();
+        
+        const sampleCandidate = await db.candidates.limit(1).first();
+        
+        return {
+          counts: {
+            jobs: jobsCount,
+            candidates: candidatesCount,
+            timeline: timelineCount,
+            notes: notesCount
+          },
+          sampleCandidate: sampleCandidate
+        };
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({ error: 'Failed to check database' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }),
+
+  // POST /api/debug/reset - Reset database
+  http.post('/api/debug/reset', async () => {
+    try {
+      const result = await createApiResponse(async () => {
+        const { clearDatabase } = await import('../db/index.js');
+        await clearDatabase();
+        return { success: true, message: 'Database cleared and reseeded' };
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({ error: 'Failed to reset database' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }),
+
   // GET /api/assessments/:jobId - Get assessment for job
   http.get('/api/assessments/:jobId', async ({ params }) => {
     try {
