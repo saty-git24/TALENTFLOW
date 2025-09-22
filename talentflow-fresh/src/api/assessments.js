@@ -1,14 +1,12 @@
+import { parseResponse } from './fetchHelper.js';
+
 const BASE_URL = '/api/assessments';
 
 export const assessmentsApi = {
   // Get assessment for a specific job
   getAssessment: async (jobId) => {
     const response = await fetch(`${BASE_URL}/${jobId}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch assessment');
-    }
-    
-    return response.json();
+    return parseResponse(response);
   },
 
   // Create or update assessment for a job
@@ -20,12 +18,8 @@ export const assessmentsApi = {
       },
       body: JSON.stringify(assessmentData),
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to save assessment');
-    }
-    
-    return response.json();
+
+    return parseResponse(response);
   },
 
   // Submit assessment response
@@ -37,21 +31,13 @@ export const assessmentsApi = {
       },
       body: JSON.stringify(responseData),
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to submit assessment response');
-    }
-    
-    return response.json();
+
+    return parseResponse(response);
   },
 
   // Get assessment responses for a candidate
   getAssessmentResponses: async (assessmentId, candidateId) => {
     const response = await fetch(`${BASE_URL}/${assessmentId}/responses/${candidateId}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch assessment responses');
-    }
-    
-    return response.json();
+    return parseResponse(response);
   }
 };

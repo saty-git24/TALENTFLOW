@@ -1,10 +1,9 @@
 import React from 'react';
-import { useDrop } from 'react-dnd';
 import { CandidateCard } from './CandidateCard.jsx';
 import { Badge } from '../../../components/ui/Badge.jsx';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner.jsx';
 import { cn } from '../../../utils/helpers.js';
-import { DRAG_TYPES, CANDIDATE_STAGE_COLORS } from '../../../utils/constants.js';
+import { CANDIDATE_STAGE_COLORS } from '../../../utils/constants.js';
 
 export const KanbanColumn = ({
   stage,
@@ -14,30 +13,18 @@ export const KanbanColumn = ({
   onStageChange,
   onEdit,
   onDelete,
-  loading = false
+  loading = false,
+  isOver = false,
+  canDrop = true
 }) => {
-  const [{ isOver, canDrop }, drop] = useDrop(() => ({
-    accept: DRAG_TYPES.CANDIDATE,
-    drop: (item) => {
-      if (item.stage !== stage) {
-        onStageChange(item.id, stage);
-      }
-    },
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-      canDrop: monitor.canDrop(),
-    }),
-  }), [stage, onStageChange]);
-
   const stageColorClass = CANDIDATE_STAGE_COLORS[stage] || 'bg-gray-100 text-gray-800';
 
   return (
     <div
-      ref={drop}
       className={cn(
-        'kanban-column flex-shrink-0 w-80',
-        isOver && canDrop && 'bg-blue-50 border-blue-200',
-        isOver && !canDrop && 'bg-red-50 border-red-200'
+        'kanban-column flex-shrink-0 w-80 min-h-96',
+        isOver && canDrop && 'bg-blue-50 border-blue-200 border-2 border-dashed rounded-lg',
+        isOver && !canDrop && 'bg-red-50 border-red-200 border-2 border-dashed rounded-lg'
       )}
     >
       {/* Column Header */}
@@ -57,7 +44,7 @@ export const KanbanColumn = ({
 
       {/* Candidates List */}
       <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
-        {candidates.map((candidate) => (
+        {candidates.map((candidate, index) => (
           <div key={candidate.id} className="kanban-card">
             <CandidateCard
               candidate={candidate}
@@ -68,6 +55,7 @@ export const KanbanColumn = ({
               compact={true}
               draggable={true}
               showJobTitle={true}
+              index={index}
             />
           </div>
         ))}

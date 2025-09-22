@@ -15,11 +15,11 @@ export const Select = React.forwardRef(({
   const selectId = props.id || props.name;
 
   return (
-    <div className={cn('space-y-1', className)}>
+    <div className={cn('space-y-2', className)}>
       {label && (
         <label
           htmlFor={selectId}
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
         >
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
@@ -30,15 +30,22 @@ export const Select = React.forwardRef(({
         id={selectId}
         ref={ref}
         className={cn(
-          'block w-full rounded-md border-gray-300 shadow-sm transition-colors',
-          'focus:border-primary-500 focus:ring-primary-500',
+          'block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm transition-all duration-200',
+          'focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1',
           'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed',
-          error && 'border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500'
+          'px-4 py-3 text-sm font-medium',
+          // Light theme
+          'bg-white text-gray-900 hover:bg-gray-50',
+          // Dark theme  
+          'dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700',
+          'dark:disabled:bg-gray-900 dark:disabled:text-gray-600',
+          error && 'border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500',
+          error && 'dark:border-red-600 dark:text-red-300 dark:focus:border-red-400 dark:focus:ring-red-400'
         )}
         {...props}
       >
         {placeholder && (
-          <option value="" disabled>
+          <option value="" disabled className="text-gray-500 dark:text-gray-400">
             {placeholder}
           </option>
         )}
@@ -46,14 +53,14 @@ export const Select = React.forwardRef(({
         {options.map((option) => {
           if (typeof option === 'string') {
             return (
-              <option key={option} value={option}>
+              <option key={option} value={option} className="bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100 py-2">
                 {option}
               </option>
             );
           }
           
           return (
-            <option key={option.value} value={option.value}>
+            <option key={option.value} value={option.value} className="bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100 py-2">
               {option.label}
             </option>
           );
@@ -63,11 +70,11 @@ export const Select = React.forwardRef(({
       </select>
       
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-red-600 dark:text-red-400 mt-1">{error}</p>
       )}
       
       {helperText && !error && (
-        <p className="text-sm text-gray-500">{helperText}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{helperText}</p>
       )}
     </div>
   );

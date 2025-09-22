@@ -31,11 +31,11 @@ export const JobFilters = ({
   const hasActiveFilters = filters.search || filters.status || filters.tags.length > 0;
 
   return (
-    <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-4">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-6 shadow-sm">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Filter className="w-5 h-5 text-gray-400" />
-          <h3 className="text-sm font-medium text-gray-900">Filters</h3>
+        <div className="flex items-center space-x-3">
+          <Filter className="w-5 h-5 text-primary-500" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Filters</h3>
         </div>
         
         {hasActiveFilters && (
@@ -43,7 +43,7 @@ export const JobFilters = ({
             variant="ghost"
             size="sm"
             onClick={onClearFilters}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
           >
             <X className="w-4 h-4 mr-1" />
             Clear all
@@ -51,10 +51,10 @@ export const JobFilters = ({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
           <Input
             placeholder="Search jobs..."
             value={filters.search}
@@ -78,18 +78,23 @@ export const JobFilters = ({
 
       {/* Tags */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Tags
+        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          Filter by Skills & Technologies
+          {filters.tags.length > 0 && (
+            <span className="ml-2 text-xs text-primary-600 dark:text-primary-400">
+              ({filters.tags.length} selected)
+            </span>
+          )}
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-3">
           {JOB_TAGS.slice(0, 15).map(tag => (
             <button
               key={tag}
               onClick={() => handleTagToggle(tag)}
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+              className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${
                 filters.tags.includes(tag)
-                  ? 'bg-primary-100 text-primary-800 border border-primary-200'
-                  : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+                  ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 border-primary-300 dark:border-primary-700 shadow-sm'
+                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
               }`}
             >
               {tag}
@@ -103,9 +108,9 @@ export const JobFilters = ({
 
       {/* Active filters summary */}
       {hasActiveFilters && (
-        <div className="pt-2 border-t border-gray-200">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-500">Active filters:</span>
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center flex-wrap gap-3">
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Active filters:</span>
             
             {filters.search && (
               <Badge variant="secondary">

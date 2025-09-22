@@ -30,19 +30,25 @@ export const useJobsStore = create(
         jobs: [job, ...state.jobs]
       })),
       
-      updateJob: (id, updates) => set((state) => ({
-        jobs: state.jobs.map(job => 
-          job.id === id ? { ...job, ...updates } : job
-        ),
-        currentJob: state.currentJob?.id === id 
-          ? { ...state.currentJob, ...updates }
-          : state.currentJob
-      })),
+      updateJob: (id, updates) => set((state) => {
+        const idNum = Number(id);
+        return {
+          jobs: state.jobs.map(job => 
+            job.id === idNum ? { ...job, ...updates } : job
+          ),
+          currentJob: state.currentJob?.id === idNum 
+            ? { ...state.currentJob, ...updates }
+            : state.currentJob
+        };
+      }),
       
-      removeJob: (id) => set((state) => ({
-        jobs: state.jobs.filter(job => job.id !== id),
-        currentJob: state.currentJob?.id === id ? null : state.currentJob
-      })),
+      removeJob: (id) => set((state) => {
+        const idNum = Number(id);
+        return {
+          jobs: state.jobs.filter(job => job.id !== idNum),
+          currentJob: state.currentJob?.id === idNum ? null : state.currentJob
+        };
+      }),
       
       reorderJobs: (jobs) => set({ jobs }),
       
@@ -71,7 +77,8 @@ export const useJobsStore = create(
       // Selectors
       getJobById: (id) => {
         const state = get();
-        return state.jobs.find(job => job.id === id);
+        const idNum = Number(id);
+        return state.jobs.find(job => job.id === idNum);
       },
       
       getFilteredJobs: () => {
@@ -86,7 +93,11 @@ export const useJobsStore = create(
           const matchesStatus = !filters.status || job.status === filters.status;
           
           const matchesTags = filters.tags.length === 0 ||
-            filters.tags.some(tag => job.tags.includes(tag));
+            filters.tags.some(tag => 
+              job.tags && job.tags.some(jobTag => 
+                jobTag.toLowerCase() === tag.toLowerCase()
+              )
+            );
           
           return matchesSearch && matchesStatus && matchesTags;
         });

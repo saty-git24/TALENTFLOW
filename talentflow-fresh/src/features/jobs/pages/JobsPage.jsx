@@ -1,6 +1,7 @@
 import React from 'react';
-import { Plus, LayoutGrid, List, ArrowUpDown } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.jsx';
+import { ViewToggle } from '../../../components/ui/ViewToggle.jsx';
 import { JobFilters } from '../components/JobFilters.jsx';
 import { JobsList } from '../components/JobsList.jsx';
 import { JobModal } from '../components/JobModal.jsx';
@@ -28,7 +29,8 @@ const JobsPage = () => {
     updateFilters,
     updatePagination,
     clearFilters,
-    clearError
+    clearError,
+    reorderJobs
   } = useJobs();
 
   const { candidates } = useCandidatesStore();
@@ -59,17 +61,34 @@ const JobsPage = () => {
 
   const handleArchiveJob = async (jobId) => {
     if (window.confirm('Are you sure you want to archive this job?')) {
-      await archiveJob(jobId);
+      try {
+        await archiveJob(jobId);
+      } catch (err) {
+        // archive error already normalized in the hook; surface to user if needed
+        console.error('Failed to archive job:', err);
+        // optional: show a quick alert so users notice immediately
+        window.alert(err?.message || 'Failed to archive job');
+      }
     }
   };
 
   const handleUnarchiveJob = async (jobId) => {
-    await unarchiveJob(jobId);
+    try {
+      await unarchiveJob(jobId);
+    } catch (err) {
+      console.error('Failed to unarchive job:', err);
+      window.alert(err?.message || 'Failed to unarchive job');
+    }
   };
 
   const handleDeleteJob = async (jobId) => {
     if (window.confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
-      await deleteJob(jobId);
+      try {
+        await deleteJob(jobId);
+      } catch (err) {
+        console.error('Failed to delete job:', err);
+        window.alert(err?.message || 'Failed to delete job');
+      }
     }
   };
 
@@ -84,7 +103,7 @@ const JobsPage = () => {
   const canReorder = enableReorder && !filters.search && !filters.status && filters.tags.length === 0;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
@@ -95,35 +114,14 @@ const JobsPage = () => {
         </div>
         
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-          {/* View mode toggle */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Reorder toggle */}
-          <Button
-            variant={enableReorder ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setEnableReorder(!enableReorder)}
-            disabled={filters.search || filters.status || filters.tags.length > 0}
-            title={canReorder ? 'Disable reordering' : 'Enable drag & drop reordering'}
-          >
-            <ArrowUpDown className="w-4 h-4" />
-            {enableReorder ? 'Reorder On' : 'Reorder'}
-          </Button>
+          {/* View Toggle Component */}
+          <ViewToggle
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            enableReorder={enableReorder}
+            onReorderToggle={() => setEnableReorder(!enableReorder)}
+            canReorder={!filters.search && !filters.status && filters.tags.length === 0}
+          />
           
           <Button onClick={() => setShowCreateModal(true)}>
             <Plus className="w-4 h-4 mr-2" />
@@ -160,11 +158,17 @@ const JobsPage = () => {
 
       {/* Reorder notice */}
       {enableReorder && canReorder && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-blue-800 text-sm">
-            <ArrowUpDown className="w-4 h-4 inline mr-1" />
-            Drag and drop reordering is enabled. Clear all filters to reorder jobs.
-          </p>
+        <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <div className="flex-shrink-0">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            </div>
+            <p className="text-blue-800 dark:text-blue-200 text-sm">
+              <strong>Drag & Drop Mode Active:</strong> Click and drag the grip handle (⋮⋮) on any job card to reorder. 
+              {viewMode === 'grid' && ' In grid view, drop cards anywhere to reorder.'}
+              {viewMode === 'list' && ' In list view, drop cards above or below other cards.'}
+            </p>
+          </div>
         </div>
       )}
 
@@ -179,6 +183,8 @@ const JobsPage = () => {
           onDelete={handleDeleteJob}
           candidateCounts={candidateCounts}
           enableReorder={canReorder}
+          viewMode={viewMode}
+          onReorder={reorderJobs}
         />
       </div>
 

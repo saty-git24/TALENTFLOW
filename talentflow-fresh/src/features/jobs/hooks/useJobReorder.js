@@ -15,7 +15,7 @@ export const useJobReorder = () => {
 
   // Handle drop
   const handleDrop = useCallback(async (targetJob) => {
-    if (!draggedJob || draggedJob.id === targetJob.id) {
+    if (!draggedJob || !targetJob || draggedJob.id === targetJob.id) {
       setDraggedJob(null);
       return;
     }
@@ -28,27 +28,41 @@ export const useJobReorder = () => {
       return;
     }
 
-    // Optimistic update
-    const newOrder = reorderArray(jobs, draggedIndex, targetIndex);
+    // Create optimistic update
+    const newOrder = [...jobs];
+    const [draggedItem] = newOrder.splice(draggedIndex, 1);
+    newOrder.splice(targetIndex, 0, draggedItem);
+    
+    // Update order property for each job
+    const reorderedJobs = newOrder.map((job, index) => ({
+      ...job,
+      order: index + 1
+    }));
+
     const originalOrder = jobs;
     
-    setOptimisticOrder(newOrder);
-    reorderJobs(newOrder);
+    // Apply optimistic update
+    setOptimisticOrder(reorderedJobs);
+    reorderJobs(reorderedJobs);
 
     try {
-      // Make API call
+      // Make API call to persist the new order
       await jobsApi.reorderJobs(draggedJob.id, {
-        fromOrder: draggedJob.order,
-        toOrder: targetJob.order
+        fromOrder: draggedJob.order || draggedIndex + 1,
+        toOrder: targetJob.order || targetIndex + 1,
+        newOrder: reorderedJobs.map(job => ({ id: job.id, order: job.order }))
       });
+      
+      console.log('Jobs reordered successfully');
     } catch (error) {
       // Rollback on failure
       console.error('Failed to reorder jobs:', error);
       reorderJobs(originalOrder);
       
-      // Show error notification
-      // You might want to use a toast notification here
-      alert('Failed to reorder jobs. Changes have been reverted.');
+      // Show user-friendly error
+      if (typeof window !== 'undefined') {
+        window.alert('Failed to save job order. Changes have been reverted.');
+      }
     } finally {
       setOptimisticOrder(null);
       setDraggedJob(null);

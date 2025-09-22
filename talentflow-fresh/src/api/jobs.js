@@ -1,4 +1,5 @@
 import { buildQueryString } from '../utils/helpers.js';
+import { parseResponse } from './fetchHelper.js';
 
 const BASE_URL = '/api/jobs';
 
@@ -9,21 +10,13 @@ export const jobsApi = {
     const url = queryString ? `${BASE_URL}?${queryString}` : BASE_URL;
     
     const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Failed to fetch jobs');
-    }
-    
-    return response.json();
+    return parseResponse(response);
   },
 
   // Get single job by ID
   getJob: async (id) => {
     const response = await fetch(`${BASE_URL}/${id}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch job');
-    }
-    
-    return response.json();
+    return parseResponse(response);
   },
 
   // Create new job
@@ -35,29 +28,31 @@ export const jobsApi = {
       },
       body: JSON.stringify(jobData),
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to create job');
-    }
-    
-    return response.json();
+
+    return parseResponse(response);
   },
 
   // Update existing job
   updateJob: async (id, updates) => {
-    const response = await fetch(`${BASE_URL}/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updates),
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to update job');
+    try {
+      const response = await fetch(`${BASE_URL}/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
+
+      const parsed = await parseResponse(response);
+      // Helpful debug log for dev: show what the API returned for updates
+      // eslint-disable-next-line no-console
+      console.debug('[jobsApi] updateJob response for id', id, parsed);
+      return parsed;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[jobsApi] updateJob failed for id', id, err);
+      throw err;
     }
-    
-    return response.json();
   },
 
   // Delete job
@@ -65,12 +60,8 @@ export const jobsApi = {
     const response = await fetch(`${BASE_URL}/${id}`, {
       method: 'DELETE',
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to delete job');
-    }
-    
-    return response.json();
+
+    return parseResponse(response);
   },
 
   // Reorder jobs
@@ -82,21 +73,21 @@ export const jobsApi = {
       },
       body: JSON.stringify({ fromOrder, toOrder }),
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to reorder jobs');
-    }
-    
-    return response.json();
+
+    return parseResponse(response);
   },
 
   // Archive job
   archiveJob: async (id) => {
+    // eslint-disable-next-line no-console
+    console.debug('[jobsApi] archiveJob called for id', id);
     return jobsApi.updateJob(id, { status: 'archived' });
   },
 
   // Unarchive job
   unarchiveJob: async (id) => {
+    // eslint-disable-next-line no-console
+    console.debug('[jobsApi] unarchiveJob called for id', id);
     return jobsApi.updateJob(id, { status: 'active' });
   }
 };

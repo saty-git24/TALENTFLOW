@@ -1,9 +1,7 @@
 import React from 'react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { JobCard } from './JobCard.jsx';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner.jsx';
-import { useJobReorder } from '../hooks/useJobReorder.js';
 
 export const JobsList = ({
   jobs = [],
@@ -13,18 +11,20 @@ export const JobsList = ({
   onUnarchive,
   onDelete,
   candidateCounts = {},
-  enableReorder = false
+  enableReorder = false,
+  viewMode = 'grid',
+  onReorder
 }) => {
-  const {
-    currentOrder,
-    draggedJob,
-    isDragging,
-    handleDragStart,
-    handleDrop,
-    handleDragEnd
-  } = useJobReorder();
+  // Handle drag end for react-beautiful-dnd
+  const handleDragEndBeautiful = (result) => {
+    if (!result.destination) return;
+    
+    const { source, destination } = result;
+    if (source.index === destination.index) return;
 
-  const jobsToRender = enableReorder ? currentOrder : jobs;
+    // Call the reorder function with the indices
+    onReorder?.(source.index, destination.index);
+  };
 
   if (loading && jobs.length === 0) {
     return (
@@ -43,49 +43,65 @@ export const JobsList = ({
     );
   }
 
-  const JobsGrid = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-      {jobsToRender.map((job) => (
-        <JobCard
-          key={job.id}
-          job={job}
-          onEdit={onEdit}
-          onArchive={onArchive}
-          onUnarchive={onUnarchive}
-          onDelete={onDelete}
-          candidateCount={candidateCounts[job.id] || 0}
-          isDragging={isDragging(job.id)}
-          onDragStart={handleDragStart}
-          onDrop={handleDrop}
-          canReorder={enableReorder}
-        />
-      ))}
-    </div>
+  const JobsContainer = () => (
+    <Droppable droppableId="jobs-list">
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+          className={viewMode === 'grid' 
+            ? "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+            : "space-y-4"
+          }
+        >
+          {jobs.map((job, index) => (
+            <Draggable
+              key={job.id}
+              draggableId={job.id.toString()}
+              index={index}
+              isDragDisabled={!enableReorder}
+            >
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.draggableProps}
+                  style={{
+                    ...provided.draggableProps.style,
+                    transform: snapshot.isDragging 
+                      ? `${provided.draggableProps.style?.transform} rotate(2deg)`
+                      : provided.draggableProps.style?.transform
+                  }}
+                >
+                  <JobCard
+                    job={job}
+                    onEdit={onEdit}
+                    onArchive={onArchive}
+                    onUnarchive={onUnarchive}
+                    onDelete={onDelete}
+                    candidateCount={candidateCounts[job.id] || 0}
+                    canReorder={enableReorder}
+                    viewMode={viewMode}
+                    isDragging={snapshot.isDragging}
+                    dragHandleProps={provided.dragHandleProps}
+                  />
+                </div>
+              )}
+            </Draggable>
+          ))}
+          {provided.placeholder}
+        </div>
+      )}
+    </Droppable>
   );
 
-  if (enableReorder) {
-    return (
-      <DndProvider backend={HTML5Backend}>
-        <div onDragEnd={handleDragEnd}>
-          <JobsGrid />
-        </div>
-        {loading && (
-          <div className="flex justify-center mt-4">
-            <LoadingSpinner />
-          </div>
-        )}
-      </DndProvider>
-    );
-  }
-
   return (
-    <>
-      <JobsGrid />
+    <DragDropContext onDragEnd={handleDragEndBeautiful}>
+      <JobsContainer />
       {loading && (
         <div className="flex justify-center mt-4">
           <LoadingSpinner />
         </div>
       )}
-    </>
+    </DragDropContext>
   );
 };

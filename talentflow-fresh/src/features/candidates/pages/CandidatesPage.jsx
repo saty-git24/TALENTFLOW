@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Plus, Users, LayoutGrid } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.jsx';
 import { VirtualizedList } from '../components/VirtualizedList.jsx';
@@ -8,6 +8,7 @@ import { useJobsStore } from '../../../store/jobsStore.js';
 
 const CandidatesPage = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialJobId = searchParams.get('jobId') || '';
   
   const [filters, setFilters] = React.useState({
@@ -56,7 +57,7 @@ const CandidatesPage = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
@@ -67,7 +68,10 @@ const CandidatesPage = () => {
         </div>
         
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-          <Button variant="outline">
+          <Button 
+            variant="outline"
+            onClick={() => navigate('/kanban')}
+          >
             <LayoutGrid className="w-4 h-4 mr-2" />
             Kanban View
           </Button>
@@ -200,6 +204,7 @@ const CandidatesPage = () => {
           onStageChange={handleStageChange}
           jobs={jobsLookup}
           loading={loading}
+          viewMode="list"
         />
       </div>
     </div>

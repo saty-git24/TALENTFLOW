@@ -56,29 +56,29 @@ export const Pagination = ({
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
   return (
-    <div className={cn('flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200', className)}>
-      <div className="flex items-center justify-between w-full">
+    <div className={cn('flex items-center justify-between px-4 sm:px-6 py-5 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-sm', className)}>
+      <div className="flex items-center justify-between w-full gap-4 sm:gap-6">
         {/* Results info */}
-        <div className="flex items-center text-sm text-gray-700">
-          Showing <span className="font-medium">{startItem}</span> to{' '}
-          <span className="font-medium">{endItem}</span> of{' '}
-          <span className="font-medium">{totalItems}</span> results
+        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+          Showing <span className="font-semibold text-gray-900 dark:text-gray-100 mx-1">{startItem}</span> to{' '}
+          <span className="font-semibold text-gray-900 dark:text-gray-100 mx-1">{endItem}</span> of{' '}
+          <span className="font-semibold text-gray-900 dark:text-gray-100 mx-1">{totalItems}</span> results
         </div>
 
         {/* Page size selector */}
         {showPageSizeSelector && (
-          <div className="flex items-center space-x-2">
-            <label htmlFor="pageSize" className="text-sm text-gray-700">
+          <div className="flex items-center space-x-4">
+            <label htmlFor="pageSize" className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Show:
             </label>
             <select
               id="pageSize"
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500"
+              className="rounded-lg border-gray-300 dark:border-gray-600 px-4 py-3 text-sm font-semibold shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 min-w-[90px] bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100"
             >
               {pageSizeOptions.map(size => (
-                <option key={size} value={size}>
+                <option key={size} value={size} className="bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100 py-2">
                   {size}
                 </option>
               ))}

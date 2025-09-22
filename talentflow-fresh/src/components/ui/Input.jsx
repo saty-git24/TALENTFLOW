@@ -13,11 +13,11 @@ export const Input = React.forwardRef(({
   const inputId = props.id || props.name;
 
   return (
-    <div className={cn('space-y-1', className)}>
+    <div className={cn('space-y-2', className)}>
       {label && (
         <label
           htmlFor={inputId}
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
@@ -29,20 +29,24 @@ export const Input = React.forwardRef(({
         id={inputId}
         ref={ref}
         className={cn(
-          'block w-full rounded-md border-gray-300 shadow-sm transition-colors',
-          'focus:border-primary-500 focus:ring-primary-500',
-          'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed',
-          error && 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500'
+          'block w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600',
+          'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100',
+          'placeholder-gray-500 dark:placeholder-gray-400',
+          'shadow-sm transition-all duration-200',
+          'focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20',
+          'hover:border-gray-400 dark:hover:border-gray-500',
+          'disabled:bg-gray-50 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 disabled:cursor-not-allowed',
+          error && 'border-red-300 dark:border-red-600 text-red-900 dark:text-red-100 placeholder-red-300 dark:placeholder-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20 dark:focus:ring-red-400/20'
         )}
         {...props}
       />
       
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       )}
       
       {helperText && !error && (
-        <p className="text-sm text-gray-500">{helperText}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
       )}
     </div>
   );

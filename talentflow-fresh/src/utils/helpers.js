@@ -88,7 +88,14 @@ export const buildQueryString = (params) => {
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
-      searchParams.append(key, value.toString());
+      if (Array.isArray(value)) {
+        // Handle arrays by joining with commas
+        if (value.length > 0) {
+          searchParams.append(key, value.join(','));
+        }
+      } else {
+        searchParams.append(key, value.toString());
+      }
     }
   });
   return searchParams.toString();

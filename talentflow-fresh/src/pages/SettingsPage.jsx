@@ -378,7 +378,7 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>

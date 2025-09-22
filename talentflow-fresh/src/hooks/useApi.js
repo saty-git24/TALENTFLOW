@@ -13,24 +13,35 @@ export const useApi = () => {
 
     try {
       const result = await requestFn();
-      
+
       if (onSuccess) {
         onSuccess(result);
       }
-      
+
       return result;
     } catch (err) {
-      const errorMessage = err.message || 'An unexpected error occurred';
+      // If the thrown error contains a server body (our parseResponse attaches it), prefer that
+      const serverBody = err && (err.body || err.response || err.data);
+      // Normalize serverBody to a user-friendly string
+      let serverMsg = '';
+      if (typeof serverBody === 'string' && serverBody.length > 0) {
+        serverMsg = serverBody;
+      } else if (serverBody && typeof serverBody === 'object') {
+        serverMsg = serverBody.error || serverBody.message || JSON.stringify(serverBody);
+      }
+
+      const errorMessage = serverMsg || (err && err.message) || 'An unexpected error occurred';
+
       setError(errorMessage);
-      
+
       if (onError) {
         onError(err);
       }
-      
+
       if (showErrorToast) {
-        console.error('API Error:', errorMessage);
+        console.error('API Error:', err);
       }
-      
+
       throw err;
     } finally {
       setLoading(false);

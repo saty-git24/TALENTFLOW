@@ -1,6 +1,6 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Plus, Filter, X } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Plus, Filter, X, ArrowLeft, List } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.jsx';
 import { Select } from '../../../components/ui/Select.jsx';
 import { KanbanBoard } from '../components/KanbanBoard.jsx';
@@ -10,6 +10,7 @@ import { useCandidates } from '../hooks/useCandidates.js';
 
 const KanbanPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialJobId = searchParams.get('jobId') || '';
   
   const [filters, setFilters] = React.useState({
@@ -64,7 +65,7 @@ const KanbanPage = () => {
   const totalCandidates = Object.values(candidatesByStage).flat().length;
 
   return (
-    <div className="p-6 max-w-full">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
@@ -78,6 +79,14 @@ const KanbanPage = () => {
         </div>
         
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/candidates')}
+          >
+            <List className="w-4 h-4 mr-2" />
+            List View
+          </Button>
+          
           <Button>
             <Plus className="w-4 h-4 mr-2" />
             Add Candidate

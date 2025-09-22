@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useJobsStore } from '../../../store/jobsStore.js';
 import { jobsApi } from '../../../api/jobs.js';
-import { useApi } from '../../../hooks/useApi.js';
 
 export const useJobs = (initialFilters = {}) => {
   const {
@@ -21,7 +20,6 @@ export const useJobs = (initialFilters = {}) => {
     removeJob
   } = useJobsStore();
 
-  const { makeRequest } = useApi();
   const [initialLoad, setInitialLoad] = useState(true);
 
   // Load jobs with current filters and pagination
@@ -33,86 +31,88 @@ export const useJobs = (initialFilters = {}) => {
       pageSize: pagination.pageSize
     };
 
-    await makeRequest(
-      () => jobsApi.getJobs(params),
-      {
-        onSuccess: (response) => {
-          setJobs(response.jobs);
-          setPagination(response.pagination);
-          if (initialLoad) {
-            setInitialLoad(false);
-          }
-        },
-        onError: (error) => {
-          setError(error.message);
-        }
+    setLoading(true);
+    try {
+      const data = await jobsApi.getJobs(params);
+      setJobs(data.jobs);
+      setPagination(data.pagination);
+      
+      if (initialLoad) {
+        setInitialLoad(false);
       }
-    );
-  }, [filters, pagination.currentPage, pagination.pageSize, makeRequest, setJobs, setPagination, setError, initialLoad]);
+    } catch (error) {
+      const body = error?.body;
+      const msg = typeof body === 'string' ? body : (body && (body.error || body.message)) || error.message || 'Failed to load jobs';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, pagination.currentPage, pagination.pageSize, setJobs, setPagination, setError, setLoading, initialLoad]);
 
   // Create new job
   const createJob = useCallback(async (jobData) => {
-    return makeRequest(
-      () => jobsApi.createJob(jobData),
-      {
-        onSuccess: (response) => {
-          addJob(response.job);
-          // Reload to get updated pagination
-          loadJobs();
-        }
-      }
-    );
-  }, [makeRequest, addJob, loadJobs]);
+    setLoading(true);
+    try {
+  const data = await jobsApi.createJob(jobData);
+  // If API returned job object, add to store
+  if (data?.job) addJob(data.job);
+      // Reload to get updated pagination
+      await loadJobs();
+    } catch (error) {
+      const body = error?.body;
+      const msg = typeof body === 'string' ? body : (body && (body.error || body.message)) || error.message || 'Failed to create job';
+      setError(msg);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [addJob, loadJobs, setError, setLoading]);
 
   // Update existing job
   const updateJobById = useCallback(async (id, updates) => {
-    return makeRequest(
-      () => jobsApi.updateJob(id, updates),
-      {
-        onSuccess: (response) => {
-          updateJob(id, response.job);
-        }
-      }
-    );
-  }, [makeRequest, updateJob]);
+    setLoading(true);
+    try {
+  const data = await jobsApi.updateJob(id, updates);
+  if (data?.job) updateJob(Number(id), data.job);
+      // Refresh list to ensure any list-level state (pagination/filters) is consistent
+      await loadJobs();
+    } catch (error) {
+      const body = error?.body;
+      const msg = typeof body === 'string' ? body : (body && (body.error || body.message)) || error.message || 'Failed to update job';
+      setError(msg);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [updateJob, setError, setLoading]);
 
   // Archive job
   const archiveJob = useCallback(async (id) => {
-    return makeRequest(
-      () => jobsApi.archiveJob(id),
-      {
-        onSuccess: (response) => {
-          updateJob(id, response.job);
-        }
-      }
-    );
-  }, [makeRequest, updateJob]);
+    return updateJobById(id, { status: 'archived' });
+  }, [updateJobById]);
 
   // Unarchive job
   const unarchiveJob = useCallback(async (id) => {
-    return makeRequest(
-      () => jobsApi.unarchiveJob(id),
-      {
-        onSuccess: (response) => {
-          updateJob(id, response.job);
-        }
-      }
-    );
-  }, [makeRequest, updateJob]);
+    return updateJobById(id, { status: 'active' });
+  }, [updateJobById]);
 
   // Delete job
   const deleteJob = useCallback(async (id) => {
-    return makeRequest(
-      () => jobsApi.deleteJob(id),
-      {
-        onSuccess: () => {
-          removeJob(id);
-          // Reload to get updated pagination
-          loadJobs();
-        }
-      }
-    );
-  }, [makeRequest, removeJob, loadJobs]);
+    setLoading(true);
+    try {
+  await jobsApi.deleteJob(id);
+  removeJob(Number(id));
+      // Reload to get updated pagination
+      await loadJobs();
+    } catch (error) {
+      const body = error?.body;
+      const msg = typeof body === 'string' ? body : (body && (body.error || body.message)) || error.message || 'Failed to delete job';
+      setError(msg);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [removeJob, loadJobs, setError, setLoading]);
 
   // Update filters
   const updateFilters = useCallback((newFilters) => {
@@ -130,6 +130,32 @@ export const useJobs = (initialFilters = {}) => {
     setFilters({ search: '', status: '', tags: [] });
     setPagination({ currentPage: 1 });
   }, [setFilters, setPagination]);
+
+  // Reorder jobs
+  const reorderJobs = useCallback(async (sourceIndex, destinationIndex) => {
+    if (sourceIndex === destinationIndex) return;
+    
+    // Optimistically update local state
+    const newJobs = Array.from(jobs);
+    const [movedJob] = newJobs.splice(sourceIndex, 1);
+    newJobs.splice(destinationIndex, 0, movedJob);
+    setJobs(newJobs);
+
+    try {
+      // Call API to persist the reorder
+      await jobsApi.reorderJobs(movedJob.id, {
+        fromOrder: sourceIndex,
+        toOrder: destinationIndex
+      });
+    } catch (error) {
+      // Revert on error
+      setJobs(jobs);
+      const body = error?.body;
+      const msg = typeof body === 'string' ? body : (body && (body.error || body.message)) || error.message || 'Failed to reorder jobs';
+      setError(msg);
+      throw error;
+    }
+  }, [jobs, setJobs, setError]);
 
   // Load jobs when filters or pagination change
   useEffect(() => {
@@ -163,6 +189,7 @@ export const useJobs = (initialFilters = {}) => {
     updatePagination,
     clearFilters,
     clearError,
+    reorderJobs,
     
     // Utilities
     refetch: loadJobs

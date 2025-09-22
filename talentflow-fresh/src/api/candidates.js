@@ -1,4 +1,5 @@
 import { buildQueryString } from '../utils/helpers.js';
+import { parseResponse } from './fetchHelper.js';
 
 const BASE_URL = '/api/candidates';
 
@@ -9,21 +10,13 @@ export const candidatesApi = {
     const url = queryString ? `${BASE_URL}?${queryString}` : BASE_URL;
     
     const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Failed to fetch candidates');
-    }
-    
-    return response.json();
+    return parseResponse(response);
   },
 
   // Get single candidate by ID
   getCandidate: async (id) => {
     const response = await fetch(`${BASE_URL}/${id}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch candidate');
-    }
-    
-    return response.json();
+    return parseResponse(response);
   },
 
   // Create new candidate
@@ -35,12 +28,8 @@ export const candidatesApi = {
       },
       body: JSON.stringify(candidateData),
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to create candidate');
-    }
-    
-    return response.json();
+
+    return parseResponse(response);
   },
 
   // Update existing candidate
@@ -52,12 +41,8 @@ export const candidatesApi = {
       },
       body: JSON.stringify(updates),
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to update candidate');
-    }
-    
-    return response.json();
+
+    return parseResponse(response);
   },
 
   // Delete candidate
@@ -65,32 +50,20 @@ export const candidatesApi = {
     const response = await fetch(`${BASE_URL}/${id}`, {
       method: 'DELETE',
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to delete candidate');
-    }
-    
-    return response.json();
+
+    return parseResponse(response);
   },
 
   // Get candidate timeline
   getCandidateTimeline: async (id) => {
     const response = await fetch(`${BASE_URL}/${id}/timeline`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch candidate timeline');
-    }
-    
-    return response.json();
+    return parseResponse(response);
   },
 
   // Get candidate notes
   getCandidateNotes: async (id) => {
     const response = await fetch(`${BASE_URL}/${id}/notes`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch candidate notes');
-    }
-    
-    return response.json();
+    return parseResponse(response);
   },
 
   // Add note to candidate
@@ -102,12 +75,8 @@ export const candidatesApi = {
       },
       body: JSON.stringify(noteData),
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to add candidate note');
-    }
-    
-    return response.json();
+
+    return parseResponse(response);
   },
 
   // Move candidate to different stage

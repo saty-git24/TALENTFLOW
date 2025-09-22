@@ -5,13 +5,19 @@ import { devtools } from 'zustand/middleware';
 export const useAppStore = create(
   devtools(
     (set, get) => ({
-      // UI state
-      sidebarOpen: true,
+  // UI state
+  sidebarOpen: true,
+  sidebarCollapsed: false,
+  darkMode: false,
       loading: false,
       error: null,
       
       // Actions
-      setSidebarOpen: (open) => set({ sidebarOpen: open }),
+  setSidebarOpen: (open) => set({ sidebarOpen: open }),
+  setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+  toggleSidebarCollapsed: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+  setDarkMode: (dark) => set({ darkMode: dark }),
+  toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
       setLoading: (loading) => set({ loading }),
       setError: (error) => set({ error }),
       clearError: () => set({ error: null }),

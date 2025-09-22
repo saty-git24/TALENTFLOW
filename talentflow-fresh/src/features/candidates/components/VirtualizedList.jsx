@@ -11,7 +11,8 @@ export const VirtualizedList = ({
   onDelete,
   onStageChange,
   jobs = {},
-  loading = false
+  loading = false,
+  viewMode = 'list'
 }) => {
   const listRef = React.useRef(null);
 
@@ -29,6 +30,7 @@ export const VirtualizedList = ({
             onDelete={onDelete}
             onStageChange={onStageChange}
             compact={true}
+            viewMode={viewMode}
           />
         </div>
       </div>
@@ -53,7 +55,7 @@ export const VirtualizedList = ({
   }
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
       <List
         ref={listRef}
         height={Math.min(CONTAINER_HEIGHT, candidates.length * ITEM_HEIGHT)}
@@ -66,8 +68,8 @@ export const VirtualizedList = ({
       </List>
       
       {loading && (
-        <div className="flex justify-center py-4 border-t border-gray-200">
-          <div className="animate-pulse text-gray-500">Loading more candidates...</div>
+        <div className="flex justify-center py-4 border-t border-gray-200 dark:border-gray-600">
+          <div className="animate-pulse text-gray-500 dark:text-gray-400">Loading more candidates...</div>
         </div>
       )}
     </div>

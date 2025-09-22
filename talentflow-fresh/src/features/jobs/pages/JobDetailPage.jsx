@@ -18,6 +18,7 @@ import { Badge } from '../../../components/ui/Badge.jsx';
 import { LoadingPage } from '../../../components/common/LoadingSpinner.jsx';
 import { JobModal } from '../components/JobModal.jsx';
 import { useJobs } from '../hooks/useJobs.js';
+import { jobsApi } from '../../../api/jobs.js';
 import { useCandidatesStore } from '../../../store/candidatesStore.js';
 import { formatDate, formatRelativeTime } from '../../../utils/helpers.js';
 import { CANDIDATE_STAGE_LABELS } from '../../../utils/constants.js';
@@ -37,16 +38,11 @@ const JobDetailPage = () => {
     const loadJob = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/jobs/${jobId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setJob(data.job);
-        } else {
-          throw new Error('Job not found');
-        }
+        const data = await jobsApi.getJob(jobId);
+        setJob(data.job || data);
       } catch (error) {
         console.error('Failed to load job:', error);
-        // Could show error state here
+        // Could show error state here (store or local)
       } finally {
         setLoading(false);
       }
@@ -57,10 +53,12 @@ const JobDetailPage = () => {
     }
   }, [jobId]);
 
-  // Get candidates for this job
+  // Get candidates for this job (coerce jobId to Number to match DB ids)
+  const jobIdNum = job ? Number(job.id) : (jobId ? Number(jobId) : null);
   const jobCandidates = React.useMemo(() => {
-    return candidates.filter(candidate => candidate.jobId === jobId);
-  }, [candidates, jobId]);
+    if (jobIdNum === null || jobIdNum === undefined) return [];
+    return candidates.filter(candidate => candidate.jobId === jobIdNum);
+  }, [candidates, jobIdNum]);
 
   // Get candidate stats by stage
   const candidateStats = React.useMemo(() => {
@@ -81,14 +79,24 @@ const JobDetailPage = () => {
 
   const handleArchive = async () => {
     if (window.confirm('Are you sure you want to archive this job?')) {
-      await archiveJob(job.id);
-      setJob({ ...job, status: 'archived' });
+      try {
+        await archiveJob(job.id);
+        setJob({ ...job, status: 'archived' });
+      } catch (err) {
+        console.error('Failed to archive job:', err);
+        window.alert(err?.message || 'Failed to archive job');
+      }
     }
   };
 
   const handleUnarchive = async () => {
-    await unarchiveJob(job.id);
-    setJob({ ...job, status: 'active' });
+    try {
+      await unarchiveJob(job.id);
+      setJob({ ...job, status: 'active' });
+    } catch (err) {
+      console.error('Failed to unarchive job:', err);
+      window.alert(err?.message || 'Failed to unarchive job');
+    }
   };
 
   if (loading) {
