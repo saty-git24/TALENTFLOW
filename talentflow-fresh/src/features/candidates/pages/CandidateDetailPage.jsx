@@ -290,20 +290,6 @@ const CandidateDetailPage = () => {
                   </div>
                 </div>
               )}
-
-              {/* Job Applied For */}
-              {job && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Applied Position</h4>
-                  <Link 
-                    to={`/jobs/${job.id}`}
-                    className="inline-flex items-center space-x-2 text-primary-600 hover:text-primary-800"
-                  >
-                    <Briefcase className="w-4 h-4" />
-                    <span>{job.title}</span>
-                  </Link>
-                </div>
-              )}
             </CardContent>
           </Card>
 

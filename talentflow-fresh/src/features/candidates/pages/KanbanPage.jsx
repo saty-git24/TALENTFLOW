@@ -32,13 +32,18 @@ const KanbanPage = () => {
       });
     }
   }, [jobs, setJobs]);
-  const { loading, error, clearError, moveCandidateToStage } = useCandidates(filters);
+  const { loading, error, clearError, moveCandidateToStage, deleteCandidate } = useCandidates(filters);
 
   // Create jobs lookup
   const jobsLookup = React.useMemo(() => {
     const lookup = {};
     jobs.forEach(job => {
+      // Store with both string and numeric keys to handle type mismatches
       lookup[job.id] = job;
+      lookup[String(job.id)] = job;
+      if (!isNaN(job.id)) {
+        lookup[Number(job.id)] = job;
+      }
     });
     return lookup;
   }, [jobs]);
@@ -79,13 +84,15 @@ const KanbanPage = () => {
     }
   };
 
-  const handleEdit = (candidate) => {
-    console.log('Edit candidate', candidate);
-  };
-
   const handleDelete = async (candidateId) => {
     if (window.confirm('Are you sure you want to delete this candidate?')) {
-      console.log('Delete candidate', candidateId);
+      try {
+        await deleteCandidate(candidateId);
+        console.log('Candidate deleted successfully');
+      } catch (error) {
+        console.error('Failed to delete candidate:', error);
+        alert('Failed to delete candidate. Please try again.');
+      }
     }
   };
 
@@ -217,7 +224,6 @@ const KanbanPage = () => {
             candidatesByStage={candidatesByStage}
             jobs={jobsLookup}
             onStageChange={handleStageChange}
-            onEdit={handleEdit}
             onDelete={handleDelete}
             loading={loading}
           />

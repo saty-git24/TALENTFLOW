@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Draggable } from 'react-beautiful-dnd';
+import { useDraggable } from '@dnd-kit/core';
 import { 
   Mail, 
   Phone, 
@@ -8,7 +8,6 @@ import {
   Briefcase, 
   Calendar,
   MoreVertical,
-  Edit,
   Trash2,
   FileText
 } from 'lucide-react';
@@ -25,14 +24,14 @@ import { useApi } from '../../../hooks/useApi.js';
 export const CandidateCard = ({
   candidate,
   job,
-  onEdit,
   onDelete,
   onStageChange,
   compact = false,
   draggable = false,
   showJobTitle = true,
   viewMode = 'grid',
-  index = 0
+  index = 0,
+  isDragging = false
 }) => {
   const [showActions, setShowActions] = React.useState(false);
   const [timeline, setTimeline] = React.useState([]);
@@ -40,8 +39,6 @@ export const CandidateCard = ({
 
   const stageColorClass = CANDIDATE_STAGE_COLORS[candidate.stage] || 'bg-gray-100 text-gray-800';
   const isListView = viewMode === 'list';
-  
-  // Only use useApi hook when we need it (list view)
   const { makeRequest } = useApi();
 
   // Load timeline data for list view only
@@ -79,7 +76,8 @@ export const CandidateCard = ({
       className={cn(
         'transition-all duration-200 hover:shadow-md cursor-pointer',
         isDragging && 'opacity-70 transform rotate-2 scale-105 z-50 shadow-xl',
-        compact ? 'p-3' : 'p-4'
+        compact ? 'p-3' : 'p-4',
+        isListView && 'mb-2' // Add bottom margin for list view
       )}
     >
       <CardContent className={cn(compact ? 'p-4' : 'p-6')}>
@@ -310,13 +308,6 @@ export const CandidateCard = ({
                     aria-label="Close actions menu"
                   />
                   <div className="absolute right-0 top-8 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-10">
-                    <button
-                      onClick={() => { setShowActions(false); onEdit(candidate); }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Candidate
-                    </button>
                     <Link 
                       to={`/candidates/${candidate.id}`}
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -353,9 +344,14 @@ export const CandidateCard = ({
               </div>
               
               {timelineLoading ? (
-                <div className="flex items-center justify-center py-4">
-                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="ml-2 text-sm text-gray-500">Loading timeline...</span>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse"></div>
+                    <div className="h-2 bg-gray-300 dark:bg-gray-600 rounded flex-1 animate-pulse"></div>
+                    <div className="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse"></div>
+                    <div className="h-2 bg-gray-300 dark:bg-gray-600 rounded flex-1 animate-pulse"></div>
+                    <div className="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse"></div>
+                  </div>
                 </div>
               ) : (
                 <CandidateTimeline 
@@ -374,26 +370,23 @@ export const CandidateCard = ({
     </Card>
   );
 
-  // If draggable, wrap in Draggable component
+  // If draggable, wrap with dnd-kit useDraggable
   if (draggable) {
+    const { attributes, listeners, setNodeRef, transform, isDragging: dndIsDragging } = useDraggable({
+      id: candidate.id,
+    });
+
+    const style = transform ? {
+      transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    } : undefined;
+
     return (
-      <Draggable
-        draggableId={candidate.id.toString()}
-        index={index}
-        isDragDisabled={!draggable}
-      >
-        {(provided, snapshot) => (
-          <CardComponent
-            isDragging={snapshot.isDragging}
-            dragHandleProps={provided.dragHandleProps}
-            innerRef={provided.innerRef}
-            {...provided.draggableProps}
-          />
-        )}
-      </Draggable>
+      <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+        <CardComponent isDragging={dndIsDragging || isDragging} />
+      </div>
     );
   }
 
   // Otherwise, render card directly
-  return <CardComponent />;
+  return <CardComponent isDragging={isDragging} />;
 };

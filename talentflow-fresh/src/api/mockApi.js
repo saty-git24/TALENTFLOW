@@ -371,36 +371,82 @@ const candidatesHandlers = [
   // PATCH /api/candidates/:id - Update candidate
   http.patch('/api/candidates/:id', async ({ request, params }) => {
     try {
-      const result = await createApiResponse(async () => {
-        const updates = await request.json();
-        const id = Number(params.id);
-        const oldCandidate = await db.candidates.get(id);
+      // Add a small delay for realism but skip error simulation for critical operations
+      await simulateNetworkDelay();
+      
+      const updates = await request.json();
+      const id = params.id; // Keep as string - don't convert to number
+      const oldCandidate = await db.candidates.where('id').equals(id).first();
 
-        if (!oldCandidate) {
-          throw new Error('Candidate not found');
-        }
+      if (!oldCandidate) {
+        return new Response(JSON.stringify({ error: 'Candidate not found' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
 
-        // If stage changed, validate the transition
-        if (updates.stage && updates.stage !== oldCandidate.stage) {
-          if (!isValidStageTransition(oldCandidate.stage, updates.stage)) {
-            throw new Error(`Invalid stage transition from ${oldCandidate.stage} to ${updates.stage}`);
-          }
-        }
-
-        await db.candidates.update(id, updates);
-        const candidate = await db.candidates.get(id);
-        
-        // If stage changed, add timeline entry
-        if (updates.stage && updates.stage !== oldCandidate.stage) {
-          await db.candidateTimeline.add({
-            candidateId: candidate.id,
-            stage: updates.stage,
-            changedBy: updates.changedBy || 'user',
-            notes: `Stage changed from ${oldCandidate.stage} to ${updates.stage}`
+      // If stage changed, validate the transition
+      if (updates.stage && updates.stage !== oldCandidate.stage) {
+        if (!isValidStageTransition(oldCandidate.stage, updates.stage)) {
+          return new Response(JSON.stringify({ 
+            error: `Invalid stage transition from ${oldCandidate.stage} to ${updates.stage}` 
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
           });
         }
+      }
+
+      await db.candidates.where('id').equals(id).modify(updates);
+      const candidate = await db.candidates.where('id').equals(id).first();
+      
+      // If stage changed, add timeline entry
+      if (updates.stage && updates.stage !== oldCandidate.stage) {
+        await db.candidateTimeline.add({
+          candidateId: candidate.id,
+          stage: updates.stage,
+          changedBy: updates.changedBy || 'user',
+          notes: `Stage changed from ${oldCandidate.stage} to ${updates.stage}`
+        });
+      }
+      
+      return new Response(JSON.stringify({ candidate }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      console.error('Error updating candidate:', error);
+      return new Response(JSON.stringify({ error: 'Failed to update candidate' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }),
+
+  // DELETE /api/candidates/:id - Delete candidate
+  http.delete('/api/candidates/:id', async ({ params }) => {
+    try {
+      const result = await createApiResponse(async () => {
+        const candidateId = params.id;
         
-        return { candidate };
+        // Delete candidate
+        await db.candidates.delete(candidateId);
+        
+        // Also delete related timeline entries
+        await db.candidateTimeline
+          .where('candidateId')
+          .equals(candidateId)
+          .delete();
+        
+        // Also try to delete with string/numeric conversion for safety
+        if (!isNaN(candidateId)) {
+          await db.candidateTimeline
+            .where('candidateId')
+            .equals(Number(candidateId))
+            .delete();
+        }
+        
+        return { success: true };
       });
 
       return new Response(JSON.stringify(result), {
@@ -408,7 +454,7 @@ const candidatesHandlers = [
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (error) {
-      return new Response(JSON.stringify({ error: 'Failed to update candidate' }), {
+      return new Response(JSON.stringify({ error: 'Failed to delete candidate' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });

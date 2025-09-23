@@ -77,8 +77,12 @@ export const useJobsStore = create(
       // Selectors
       getJobById: (id) => {
         const state = get();
-        const idNum = Number(id);
-        return state.jobs.find(job => job.id === idNum);
+        // Handle both string and numeric IDs
+        return state.jobs.find(job => 
+          job.id === id || 
+          String(job.id) === String(id) ||
+          (Number.isInteger(Number(id)) && job.id === Number(id))
+        );
       },
       
       getFilteredJobs: () => {

@@ -26,7 +26,8 @@ const CandidatesPage = () => {
     error,
     updateFilters,
     clearError,
-    moveCandidateToStage
+    moveCandidateToStage,
+    deleteCandidate
   } = useCandidates(filters);
 
   const { jobs, setJobs } = useJobsStore();
@@ -44,7 +45,12 @@ const CandidatesPage = () => {
   const jobsLookup = React.useMemo(() => {
     const lookup = {};
     jobs.forEach(job => {
+      // Store with both string and numeric keys to handle type mismatches
       lookup[job.id] = job;
+      lookup[String(job.id)] = job;
+      if (!isNaN(job.id)) {
+        lookup[Number(job.id)] = job;
+      }
     });
     return lookup;
   }, [jobs]);
@@ -80,13 +86,15 @@ const CandidatesPage = () => {
     }
   };
 
-  const handleEdit = (candidate) => {
-    console.log('Edit candidate', candidate);
-  };
-
   const handleDelete = async (candidateId) => {
     if (window.confirm('Are you sure you want to delete this candidate?')) {
-      console.log('Delete candidate', candidateId);
+      try {
+        await deleteCandidate(candidateId);
+        console.log('Candidate deleted successfully');
+      } catch (error) {
+        console.error('Failed to delete candidate:', error);
+        alert('Failed to delete candidate. Please try again.');
+      }
     }
   };
 
@@ -228,7 +236,6 @@ const CandidatesPage = () => {
         
         <VirtualizedList
           candidates={candidates}
-          onEdit={handleEdit}
           onDelete={handleDelete}
           onStageChange={handleStageChange}
           jobs={jobsLookup}

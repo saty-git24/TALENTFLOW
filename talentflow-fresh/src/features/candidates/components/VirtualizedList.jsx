@@ -2,12 +2,11 @@ import React from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { CandidateCard } from './CandidateCard.jsx';
 
-const ITEM_HEIGHT = 180; // Height of each candidate card with timeline
+const ITEM_HEIGHT = 190; // Height of each candidate card with improved spacing
 const CONTAINER_HEIGHT = 600; // Height of the virtualized container
 
 export const VirtualizedList = ({
   candidates = [],
-  onEdit,
   onDelete,
   onStageChange,
   jobs = {},
@@ -20,13 +19,21 @@ export const VirtualizedList = ({
   const ItemRenderer = React.memo(({ index, style }) => {
     const candidate = candidates[index];
     
+    // Handle potential type mismatches between job IDs
+    const candidateJob = jobs[candidate.jobId] || 
+                        jobs[String(candidate.jobId)] || 
+                        jobs[Number(candidate.jobId)] ||
+                        Object.values(jobs).find(job => 
+                          job.id === candidate.jobId || 
+                          String(job.id) === String(candidate.jobId)
+                        );
+    
     return (
       <div style={style}>
-        <div className="px-4 py-2">
+        <div className="px-4 py-4">
           <CandidateCard
             candidate={candidate}
-            job={jobs[candidate.jobId]}
-            onEdit={onEdit}
+            job={candidateJob}
             onDelete={onDelete}
             onStageChange={onStageChange}
             compact={false} // Set to false to show timeline in list view

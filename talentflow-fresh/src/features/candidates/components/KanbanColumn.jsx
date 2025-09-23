@@ -1,4 +1,5 @@
 import React from 'react';
+import { useDroppable } from '@dnd-kit/core';
 import { CandidateCard } from './CandidateCard.jsx';
 import { Badge } from '../../../components/ui/Badge.jsx';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner.jsx';
@@ -11,20 +12,21 @@ export const KanbanColumn = ({
   candidates = [],
   jobs = {},
   onStageChange,
-  onEdit,
   onDelete,
-  loading = false,
-  isOver = false,
-  canDrop = true
+  loading = false
 }) => {
+  const { isOver, setNodeRef } = useDroppable({
+    id: stage,
+  });
+
   const stageColorClass = CANDIDATE_STAGE_COLORS[stage] || 'bg-gray-100 text-gray-800';
 
   return (
     <div
+      ref={setNodeRef}
       className={cn(
         'kanban-column flex-shrink-0 w-80 min-h-96',
-        isOver && canDrop && 'bg-blue-50 border-blue-200 border-2 border-dashed rounded-lg',
-        isOver && !canDrop && 'bg-red-50 border-red-200 border-2 border-dashed rounded-lg'
+        isOver && 'bg-blue-50 border-blue-200 border-2 border-dashed rounded-lg'
       )}
     >
       {/* Column Header */}
@@ -36,7 +38,7 @@ export const KanbanColumn = ({
       </div>
 
       {/* Drop Zone Indicator */}
-      {isOver && canDrop && (
+      {isOver && (
         <div className="mb-4 p-4 border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg text-center">
           <p className="text-blue-600 text-sm font-medium">Drop candidate here</p>
         </div>
@@ -45,19 +47,17 @@ export const KanbanColumn = ({
       {/* Candidates List */}
       <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
         {candidates.map((candidate, index) => (
-          <div key={candidate.id} className="kanban-card">
-            <CandidateCard
-              candidate={candidate}
-              job={jobs[candidate.jobId]}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onStageChange={onStageChange}
-              compact={true}
-              draggable={true}
-              showJobTitle={true}
-              index={index}
-            />
-          </div>
+          <CandidateCard
+            key={candidate.id}
+            candidate={candidate}
+            job={jobs[candidate.jobId]}
+            onDelete={onDelete}
+            onStageChange={onStageChange}
+            compact={true}
+            draggable={true}
+            showJobTitle={true}
+            index={index}
+          />
         ))}
         
         {candidates.length === 0 && !loading && (

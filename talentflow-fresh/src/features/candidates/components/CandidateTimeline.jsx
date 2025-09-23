@@ -43,11 +43,19 @@ export const CandidateTimeline = ({
       return <X className="w-4 h-4 drop-shadow-sm" strokeWidth={2.5} />;
     }
     
+    // Special case for hired stage - always show tick mark
+    if (stage === CANDIDATE_STAGES.HIRED && (status === 'completed' || status === 'current')) {
+      return <Check className="w-4 h-4 drop-shadow-sm" strokeWidth={3} />;
+    }
+    
     switch (status) {
       case 'completed':
         return <Check className="w-4 h-4 drop-shadow-sm" strokeWidth={3} />;
       case 'current':
-        return <Clock className="w-4 h-4 drop-shadow-sm" strokeWidth={2.5} />;
+        // Show clock for current stage unless it's hired
+        return stage === CANDIDATE_STAGES.HIRED ? 
+          <Check className="w-4 h-4 drop-shadow-sm" strokeWidth={3} /> :
+          <Clock className="w-4 h-4 drop-shadow-sm" strokeWidth={2.5} />;
       default:
         return <div className="w-2 h-2 rounded-full bg-current shadow-sm" />;
     }
