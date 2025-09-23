@@ -91,25 +91,71 @@ export const CandidateCard = ({
           )}>
             {/* Header */}
             <div className={cn(
-              'flex items-center space-x-2',
+              'flex items-center justify-between w-full',
               isListView && compact ? 'mb-0 min-w-0 flex-shrink-0' : 'mb-2'
             )}>
-              <Link 
-                to={`/candidates/${candidate.id}`}
-                className={cn(
-                  'font-semibold text-gray-900 dark:text-gray-100 hover:text-primary-600 dark:hover:text-primary-400 transition-colors truncate',
-                  isListView && compact ? 'text-sm' : 'text-lg'
+              <div className="flex items-center space-x-2 flex-1 min-w-0">
+                <Link 
+                  to={`/candidates/${candidate.id}`}
+                  className={cn(
+                    'font-semibold text-gray-900 dark:text-gray-100 hover:text-primary-600 dark:hover:text-primary-400 transition-colors truncate',
+                    isListView && compact ? 'text-sm' : 'text-lg'
+                  )}
+                >
+                  {candidate.name}
+                </Link>
+                
+                <Badge 
+                  className={cn('text-xs', stageColorClass)}
+                  size="sm"
+                >
+                  {CANDIDATE_STAGE_LABELS[candidate.stage]}
+                </Badge>
+              </div>
+
+              {/* More actions button - positioned at extreme right */}
+              <div className="relative ml-4 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowActions((prev) => !prev);
+                  }}
+                  className="transition-opacity opacity-100"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+
+                {/* Actions dropdown */}
+                {showActions && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-0"
+                      onClick={() => setShowActions(false)}
+                      aria-label="Close actions menu"
+                    />
+                    <div className="absolute right-0 top-8 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-10">
+                      <Link 
+                        to={`/candidates/${candidate.id}`}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        onClick={() => setShowActions(false)}
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        View Profile
+                      </Link>
+                      <hr className="my-1 border-gray-200 dark:border-gray-600" />
+                      <button
+                        onClick={() => { setShowActions(false); onDelete(candidate.id); }}
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </button>
+                    </div>
+                  </>
                 )}
-              >
-                {candidate.name}
-              </Link>
-              
-              <Badge 
-                className={cn('text-xs', stageColorClass)}
-                size="sm"
-              >
-                {CANDIDATE_STAGE_LABELS[candidate.stage]}
-              </Badge>
+              </div>
             </div>
 
             {isListView && compact ? (
@@ -259,75 +305,6 @@ export const CandidateCard = ({
                 </div>
               </>
             )}
-          </div>
-
-          {/* Actions */}
-          <div className={cn(
-            'flex flex-col items-end space-y-2',
-            isListView && compact ? 'ml-4 flex-shrink-0' : 'ml-4'
-          )}>
-            {/* Stage selector (always visible in compact mode) */}
-            {compact && (
-              <Select
-                value={candidate.stage}
-                onChange={(e) => handleStageChange(e.target.value)}
-                className="text-xs min-w-0"
-                size="sm"
-              >
-                {Object.entries(CANDIDATE_STAGE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            )}
-
-            {/* More actions */}
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowActions((prev) => !prev);
-                }}
-                className={cn(
-                  'transition-opacity',
-                  'opacity-100'
-                )}
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-
-              {/* Actions dropdown */}
-              {showActions && (
-                <>
-                  <div
-                    className="fixed inset-0 z-0"
-                    onClick={() => setShowActions(false)}
-                    aria-label="Close actions menu"
-                  />
-                  <div className="absolute right-0 top-8 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-10">
-                    <Link 
-                      to={`/candidates/${candidate.id}`}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      onClick={() => setShowActions(false)}
-                    >
-                      <FileText className="w-4 h-4 mr-2" />
-                      View Profile
-                    </Link>
-                    <hr className="my-1 border-gray-200 dark:border-gray-600" />
-                    <button
-                      onClick={() => { setShowActions(false); onDelete(candidate.id); }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
 
           {/* Timeline Section - Only in list view when not compact */}

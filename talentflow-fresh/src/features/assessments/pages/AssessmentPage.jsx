@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Eye, Save, Play } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.jsx';
 import { AssessmentBuilder } from '../components/AssessmentBuilder.jsx';
@@ -12,7 +12,9 @@ import { useApi } from '../../../hooks/useApi.js';
 
 const AssessmentPage = () => {
   const { jobId } = useParams();
-  const [activeTab, setActiveTab] = React.useState('builder'); // 'builder' or 'preview'
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode'); // Check for 'preview' parameter
+  const [activeTab, setActiveTab] = React.useState(mode === 'preview' ? 'preview' : 'builder');
   const [loading, setLoading] = React.useState(false);
 
   const {
@@ -20,7 +22,8 @@ const AssessmentPage = () => {
     setCurrentAssessment,
     loadAssessmentToBuilder,
     resetBuilder,
-    setPreviewMode
+    setPreviewMode,
+    getAssessmentsByJobId
   } = useAssessmentsStore();
 
   const { jobs, getJobById } = useJobsStore();
@@ -34,16 +37,35 @@ const AssessmentPage = () => {
       if (jobId) {
         setLoading(true);
         try {
-          const response = await makeRequest(() => assessmentsApi.getAssessment(jobId));
-          if (response.assessment) {
-            setCurrentAssessment(response.assessment);
-            loadAssessmentToBuilder(response.assessment);
+          // First check if we have assessments in the store for this job
+          const localAssessments = getAssessmentsByJobId(jobId);
+          
+          if (localAssessments.length > 0) {
+            // Use the most recent assessment for this job
+            const latestAssessment = localAssessments.sort(
+              (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+            )[0];
+            
+            setCurrentAssessment(latestAssessment);
+            loadAssessmentToBuilder(latestAssessment);
           } else {
-            resetBuilder();
+            // Try to load from API as fallback
+            try {
+              const response = await makeRequest(() => assessmentsApi.getAssessment(jobId));
+              if (response.assessment) {
+                setCurrentAssessment(response.assessment);
+                loadAssessmentToBuilder(response.assessment);
+              } else {
+                resetBuilder(jobId);
+              }
+            } catch (error) {
+              console.log('No existing assessment found, starting fresh');
+              resetBuilder(jobId);
+            }
           }
         } catch (error) {
           console.error('Failed to load assessment:', error);
-          resetBuilder();
+          resetBuilder(jobId);
         } finally {
           setLoading(false);
         }
@@ -51,7 +73,7 @@ const AssessmentPage = () => {
     };
 
     loadAssessment();
-  }, [jobId, makeRequest, setCurrentAssessment, loadAssessmentToBuilder, resetBuilder]);
+  }, [jobId, makeRequest, setCurrentAssessment, loadAssessmentToBuilder, resetBuilder, getAssessmentsByJobId]);
 
   const handleSave = async (assessmentData) => {
     return makeRequest(
@@ -100,10 +122,10 @@ const AssessmentPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
-          <Link to={`/jobs/${jobId}`}>
+          <Link to="/assessments">
             <Button variant="outline" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Job
+              Back to Assessments
             </Button>
           </Link>
           
@@ -134,15 +156,6 @@ const AssessmentPage = () => {
               Preview
             </Button>
           </div>
-
-          {currentAssessment && (
-            <Link to={`/assessments/${jobId}/take`}>
-              <Button>
-                <Play className="w-4 h-4 mr-2" />
-                Take Assessment
-              </Button>
-            </Link>
-          )}
         </div>
       </div>
 
@@ -151,17 +164,11 @@ const AssessmentPage = () => {
         <AssessmentBuilder
           jobId={jobId}
           onSave={handleSave}
-          onPreview={handlePreview}
           loading={loading}
         />
       ) : (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Assessment Preview</h2>
-            <Button variant="outline" onClick={handleBackToBuilder}>
-              Back to Builder
-            </Button>
-          </div>
+          <h2 className="text-xl font-semibold text-gray-900">Assessment Preview</h2>
           <AssessmentPreview assessment={currentAssessment} />
         </div>
       )}

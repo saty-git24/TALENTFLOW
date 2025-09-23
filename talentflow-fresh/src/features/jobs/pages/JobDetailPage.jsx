@@ -170,7 +170,7 @@ const JobDetailPage = () => {
             </Button>
           )}
           
-          <Link to={`/assessments/${job.id}`}>
+          <Link to={`/jobs/${job.id}/assessment`}>
             <Button>
               <FileCheck className="w-4 h-4 mr-2" />
               Assessment
@@ -308,11 +308,7 @@ const JobDetailPage = () => {
               
               {jobCandidates.length === 0 ? (
                 <div className="text-center py-6">
-                  <p className="text-gray-500 text-sm mb-3">No candidates yet</p>
-                  <Button size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Candidate
-                  </Button>
+                  <p className="text-gray-500 text-sm">No candidates yet</p>
                 </div>
               ) : (
                 <div className="mt-4">
@@ -333,7 +329,7 @@ const JobDetailPage = () => {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link to={`/assessments/${job.id}`} className="block">
+              <Link to={`/jobs/${job.id}/assessment`} className="block">
                 <Button variant="outline" className="w-full justify-start">
                   <FileCheck className="w-4 h-4 mr-2" />
                   Manage Assessment
@@ -343,7 +339,7 @@ const JobDetailPage = () => {
               <Link to={`/candidates?jobId=${job.id}`} className="block">
                 <Button variant="outline" className="w-full justify-start">
                   <Users className="w-4 h-4 mr-2" />
-                  View Candidates
+                  Candidates
                 </Button>
               </Link>
               
@@ -358,18 +354,6 @@ const JobDetailPage = () => {
               >
                 Share Job
               </Button>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity placeholder */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-6">
-                <p className="text-gray-500 text-sm">No recent activity</p>
-              </div>
             </CardContent>
           </Card>
         </div>

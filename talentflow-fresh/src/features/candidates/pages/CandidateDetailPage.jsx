@@ -26,7 +26,6 @@ import { useApi } from '../../../hooks/useApi.js';
 import { MentionInput } from '../../../components/ui/MentionInput.jsx';
 import { MentionText } from '../../../components/ui/MentionText.jsx';
 import { CandidateTimeline } from '../components/CandidateTimeline.jsx';
-import { TimelineStats } from '../components/TimelineStats.jsx';
 
 const CandidateDetailPage = () => {
   const { candidateId } = useParams();

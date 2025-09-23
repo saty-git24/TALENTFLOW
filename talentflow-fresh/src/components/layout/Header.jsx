@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, User, Bell } from 'lucide-react';
+import { Menu, User } from 'lucide-react';
 import { useAppStore } from '../../store/index.js';
 import { Button } from '../ui/Button.jsx';
 
@@ -28,10 +28,6 @@ export const Header = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm">
-              <Bell className="w-5 h-5" />
-            </Button>
-            
             <div className="flex items-center space-x-3">
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-medium text-gray-900">Satyam Gautam</p>

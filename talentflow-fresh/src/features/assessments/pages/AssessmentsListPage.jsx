@@ -1,58 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, FileCheck, Eye, Edit, Play, Users, Clock } from 'lucide-react';
+import { Plus, FileCheck, Eye, Edit, Play, Users, Clock, Trash2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.jsx';
 import { Card, CardHeader, CardContent, CardTitle } from '../../../components/ui/Card.jsx';
 import { Badge } from '../../../components/ui/Badge.jsx';
+import { JobSelectorModal } from '../components/JobSelectorModal.jsx';
 import { useJobsStore } from '../../../store/jobsStore.js';
+import { useAssessmentsStore } from '../../../store/assessmentsStore.js';
 import { formatDate, formatRelativeTime } from '../../../utils/helpers.js';
 
 const AssessmentsListPage = () => {
   const { jobs } = useJobsStore();
+  const { getAllAssessments, deleteAssessment } = useAssessmentsStore();
+  const [isJobSelectorOpen, setIsJobSelectorOpen] = useState(false);
   
-  // Mock assessments data - in real app, this would come from assessments store
-  const mockAssessments = [
-    {
-      id: 'assessment-1',
-      jobId: jobs[0]?.id,
-      title: 'Senior Frontend Developer Assessment',
-      description: 'Technical assessment covering React, JavaScript, and problem-solving skills',
-      sections: 3,
-      questions: 12,
-      timeLimit: 60,
-      responses: 8,
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: 'assessment-2', 
-      jobId: jobs[1]?.id,
-      title: 'Backend Engineer Assessment',
-      description: 'Assessment focusing on system design, databases, and API development',
-      sections: 4,
-      questions: 15,
-      timeLimit: 90,
-      responses: 12,
-      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: 'assessment-3',
-      jobId: jobs[2]?.id,
-      title: 'Product Manager Assessment',
-      description: 'Evaluation of product strategy, user experience, and analytical thinking',
-      sections: 5,
-      questions: 18,
-      timeLimit: 45,
-      responses: 5,
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-    }
-  ];
+  // Get real assessments from store
+  const savedAssessments = getAllAssessments();
+  
+  // Calculate stats from real assessments
+  const assessmentStats = savedAssessments.reduce((stats, assessment) => {
+    stats.totalQuestions += assessment.sections.reduce((count, section) => count + section.questions.length, 0);
+    stats.totalSections += assessment.sections.length;
+    // Since we don't have responses yet, we'll set this to 0
+    stats.totalResponses += 0;
+    return stats;
+  }, { totalQuestions: 0, totalSections: 0, totalResponses: 0 });
 
   const getJobTitle = (jobId) => {
     const job = jobs.find(j => j.id === jobId);
     return job?.title || 'Unknown Position';
+  };
+
+  const handleDeleteAssessment = (assessmentId, assessmentTitle) => {
+    if (window.confirm(`Are you sure you want to delete the assessment "${assessmentTitle}"? This action cannot be undone.`)) {
+      deleteAssessment(assessmentId);
+    }
   };
 
   return (
@@ -67,7 +49,7 @@ const AssessmentsListPage = () => {
         </div>
         
         <div className="mt-4 sm:mt-0">
-          <Button>
+          <Button onClick={() => setIsJobSelectorOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Create Assessment
           </Button>
@@ -82,7 +64,7 @@ const AssessmentsListPage = () => {
               <FileCheck className="w-8 h-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Assessments</p>
-                <p className="text-2xl font-bold text-gray-900">{mockAssessments.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{savedAssessments.length}</p>
               </div>
             </div>
           </CardContent>
@@ -95,7 +77,7 @@ const AssessmentsListPage = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Responses</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {mockAssessments.reduce((acc, a) => acc + a.responses, 0)}
+                  {assessmentStats.totalResponses}
                 </p>
               </div>
             </div>
@@ -109,7 +91,10 @@ const AssessmentsListPage = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Avg. Duration</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {Math.round(mockAssessments.reduce((acc, a) => acc + a.timeLimit, 0) / mockAssessments.length)} min
+                  {savedAssessments.length > 0 
+                    ? Math.round(savedAssessments.reduce((acc, a) => acc + (a.settings?.timeLimit || 60), 0) / savedAssessments.length)
+                    : 0
+                  } min
                 </p>
               </div>
             </div>
@@ -123,7 +108,7 @@ const AssessmentsListPage = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Questions</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {mockAssessments.reduce((acc, a) => acc + a.questions, 0)}
+                  {assessmentStats.totalQuestions}
                 </p>
               </div>
             </div>
@@ -133,75 +118,98 @@ const AssessmentsListPage = () => {
 
       {/* Assessments List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {mockAssessments.map((assessment) => (
-          <Card key={assessment.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg mb-2">{assessment.title}</CardTitle>
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                    {assessment.description}
-                  </p>
-                  
-                  <div className="flex items-center text-sm text-gray-500 mb-2">
-                    <span className="font-medium">{getJobTitle(assessment.jobId)}</span>
+        {savedAssessments.map((assessment) => {
+          const totalQuestions = assessment.sections.reduce((count, section) => count + section.questions.length, 0);
+          const totalSections = assessment.sections.length;
+          
+          return (
+            <Card key={assessment.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg mb-2">
+                      {assessment.title || 'Untitled Assessment'}
+                    </CardTitle>
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                      {assessment.description || 'No description provided'}
+                    </p>
+                    
+                    <div className="flex items-center text-sm text-gray-500 mb-2">
+                      <span className="font-medium">{getJobTitle(assessment.jobId)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent>
-              {/* Assessment Stats */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900">{assessment.sections}</div>
-                  <div className="text-xs text-gray-600">Sections</div>
+              </CardHeader>
+              
+              <CardContent>
+                {/* Assessment Stats */}
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-gray-900">{totalSections}</div>
+                    <div className="text-xs text-gray-600">Sections</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-gray-900">{totalQuestions}</div>
+                    <div className="text-xs text-gray-600">Questions</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-gray-900">
+                      {assessment.settings?.timeLimit || 'No limit'}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {assessment.settings?.timeLimit ? 'Minutes' : ''}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900">{assessment.questions}</div>
-                  <div className="text-xs text-gray-600">Questions</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900">{assessment.timeLimit}</div>
-                  <div className="text-xs text-gray-600">Minutes</div>
-                </div>
-              </div>
 
-              {/* Response Stats */}
-              <div className="flex items-center justify-between mb-4">
-                <Badge variant="secondary" className="flex items-center">
-                  <Users className="w-3 h-3 mr-1" />
-                  {assessment.responses} responses
-                </Badge>
-                
-                <div className="text-xs text-gray-500">
-                  Updated {formatRelativeTime(assessment.updatedAt)}
+                {/* Response Stats - Currently 0 since we don't track responses yet */}
+                <div className="flex items-center justify-between mb-4">
+                  <Badge variant="secondary" className="flex items-center">
+                    <Users className="w-3 h-3 mr-1" />
+                    0 responses
+                  </Badge>
+                  
+                  <div className="text-xs text-gray-500">
+                    {assessment.updatedAt 
+                      ? formatRelativeTime(new Date(assessment.updatedAt))
+                      : 'Just created'
+                    }
+                  </div>
                 </div>
-              </div>
 
-              {/* Actions */}
-              <div className="flex items-center space-x-2">
-                <Link to={`/assessments/${assessment.jobId}`} className="flex-1">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
+                {/* Actions */}
+                <div className="flex items-center space-x-2">
+                  <Link to={`/assessments/${assessment.jobId}`} className="flex-1">
+                    <Button variant="outline" size="sm" className="w-full">
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                  </Link>
+                  
+                  <Link to={`/assessments/${assessment.jobId}?mode=preview`} className="flex-1">
+                    <Button size="sm" className="w-full">
+                      <Play className="w-4 h-4 mr-2" />
+                      Preview
+                    </Button>
+                  </Link>
+
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleDeleteAssessment(assessment.id, assessment.title)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </Button>
-                </Link>
-                
-                <Link to={`/assessments/${assessment.jobId}/take`} className="flex-1">
-                  <Button size="sm" className="w-full">
-                    <Play className="w-4 h-4 mr-2" />
-                    Preview
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Empty State */}
-      {mockAssessments.length === 0 && (
+      {savedAssessments.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
             <FileCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -209,13 +217,18 @@ const AssessmentsListPage = () => {
             <p className="text-gray-600 mb-6">
               Create your first assessment to evaluate candidates effectively.
             </p>
-            <Button>
+            <Button onClick={() => setIsJobSelectorOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Create Your First Assessment
             </Button>
           </CardContent>
         </Card>
       )}
+      
+      <JobSelectorModal 
+        isOpen={isJobSelectorOpen}
+        onClose={() => setIsJobSelectorOpen(false)}
+      />
     </div>
   );
 };

@@ -72,12 +72,12 @@ const navigationItems = [
     name: 'Assessments',
     href: '/assessments',
     icon: FileCheck
-  },
-  {
-    name: 'Settings',
-    href: '/settings',
-    icon: Settings
   }
+  // {
+  //   name: 'Settings',
+  //   href: '/settings',
+  //   icon: Settings
+  // }
 ];
 
 export const Sidebar = () => {

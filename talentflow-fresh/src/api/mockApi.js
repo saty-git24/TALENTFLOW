@@ -375,10 +375,28 @@ const candidatesHandlers = [
       await simulateNetworkDelay();
       
       const updates = await request.json();
-      const id = params.id; // Keep as string - don't convert to number
-      const oldCandidate = await db.candidates.where('id').equals(id).first();
+      const id = params.id;
+      
+      // Try to find candidate by both string and numeric ID
+      let oldCandidate;
+      
+      // First try as numeric ID
+      if (!isNaN(id)) {
+        oldCandidate = await db.candidates.get(Number(id));
+      }
+      
+      // If not found, try as string ID
+      if (!oldCandidate) {
+        oldCandidate = await db.candidates.where('id').equals(id).first();
+      }
+      
+      // If still not found, try string conversion
+      if (!oldCandidate) {
+        oldCandidate = await db.candidates.where('id').equals(String(id)).first();
+      }
 
       if (!oldCandidate) {
+        console.error('Candidate not found with ID:', id, 'Type:', typeof id);
         return new Response(JSON.stringify({ error: 'Candidate not found' }), {
           status: 404,
           headers: { 'Content-Type': 'application/json' }
@@ -397,8 +415,9 @@ const candidatesHandlers = [
         }
       }
 
-      await db.candidates.where('id').equals(id).modify(updates);
-      const candidate = await db.candidates.where('id').equals(id).first();
+      // Update using the actual database ID (which is numeric)
+      await db.candidates.update(oldCandidate.id, updates);
+      const candidate = await db.candidates.get(oldCandidate.id);
       
       // If stage changed, add timeline entry
       if (updates.stage && updates.stage !== oldCandidate.stage) {
@@ -429,20 +448,33 @@ const candidatesHandlers = [
       const result = await createApiResponse(async () => {
         const candidateId = params.id;
         
-        // Delete candidate
-        await db.candidates.delete(candidateId);
+        // Try to find and delete candidate by both string and numeric ID
+        let deleted = false;
         
-        // Also delete related timeline entries
-        await db.candidateTimeline
-          .where('candidateId')
-          .equals(candidateId)
-          .delete();
-        
-        // Also try to delete with string/numeric conversion for safety
+        // First try as numeric ID
         if (!isNaN(candidateId)) {
+          const numericId = Number(candidateId);
+          const candidate = await db.candidates.get(numericId);
+          if (candidate) {
+            await db.candidates.delete(numericId);
+            deleted = true;
+            
+            // Also delete related timeline entries
+            await db.candidateTimeline
+              .where('candidateId')
+              .equals(numericId)
+              .delete();
+          }
+        }
+        
+        // If not deleted yet, try as string
+        if (!deleted) {
+          await db.candidates.where('id').equals(candidateId).delete();
+          
+          // Also delete related timeline entries
           await db.candidateTimeline
             .where('candidateId')
-            .equals(Number(candidateId))
+            .equals(candidateId)
             .delete();
         }
         
