@@ -25,6 +25,8 @@ import { CANDIDATE_STAGES, CANDIDATE_STAGE_LABELS, CANDIDATE_STAGE_COLORS, MOCK_
 import { useApi } from '../../../hooks/useApi.js';
 import { MentionInput } from '../../../components/ui/MentionInput.jsx';
 import { MentionText } from '../../../components/ui/MentionText.jsx';
+import { CandidateTimeline } from '../components/CandidateTimeline.jsx';
+import { TimelineStats } from '../components/TimelineStats.jsx';
 
 const CandidateDetailPage = () => {
   const { candidateId } = useParams();
@@ -366,41 +368,23 @@ const CandidateDetailPage = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {timeline.length > 0 ? (
-                  sortTimelineByHiringProcess(timeline).map(entry => (
-                    <div key={entry.id} className="timeline-item">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900">
-                            {CANDIDATE_STAGE_LABELS[entry.stage]}
-                          </div>
-                          {entry.notes && (
-                            <div className="text-sm text-gray-600 mt-1">
-                              {entry.notes}
-                            </div>
-                          )}
-                          <div className="text-xs text-gray-500 mt-1">
-                            {formatDate(entry.changedAt)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-gray-500 text-center py-4">
-                    No timeline entries yet
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Visual Timeline Progress */}
+          <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
+              <div className="w-1 h-4 bg-blue-500 rounded-full mr-2"></div>
+              Progress Timeline
+            </h4>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <CandidateTimeline 
+                currentStage={candidate.stage} 
+                timeline={timeline}
+                compact={false}
+                showLabels={true}
+                showDates={true}
+                className="px-1"
+              />
+            </div>
+          </div>
 
           {/* Quick Actions */}
           <Card>

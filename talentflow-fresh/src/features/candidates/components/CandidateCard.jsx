@@ -18,6 +18,9 @@ import { Button } from '../../../components/ui/Button.jsx';
 import { Select } from '../../../components/ui/Select.jsx';
 import { formatRelativeTime, cn } from '../../../utils/helpers.js';
 import { CANDIDATE_STAGES, CANDIDATE_STAGE_LABELS, CANDIDATE_STAGE_COLORS } from '../../../utils/constants.js';
+import { CandidateTimeline } from './CandidateTimeline.jsx';
+import { candidatesApi } from '../../../api/candidates.js';
+import { useApi } from '../../../hooks/useApi.js';
 
 export const CandidateCard = ({
   candidate,
@@ -32,15 +35,42 @@ export const CandidateCard = ({
   index = 0
 }) => {
   const [showActions, setShowActions] = React.useState(false);
+  const [timeline, setTimeline] = React.useState([]);
+  const [timelineLoading, setTimelineLoading] = React.useState(false);
+
+  const stageColorClass = CANDIDATE_STAGE_COLORS[candidate.stage] || 'bg-gray-100 text-gray-800';
+  const isListView = viewMode === 'list';
+  
+  // Only use useApi hook when we need it (list view)
+  const { makeRequest } = useApi();
+
+  // Load timeline data for list view only
+  React.useEffect(() => {
+    if (isListView && !compact) {
+      const loadTimeline = async () => {
+        try {
+          setTimelineLoading(true);
+          const timelineResponse = await makeRequest(() => 
+            candidatesApi.getCandidateTimeline(candidate.id)
+          );
+          setTimeline(timelineResponse.timeline || []);
+        } catch (error) {
+          console.error('Failed to load timeline:', error);
+          setTimeline([]);
+        } finally {
+          setTimelineLoading(false);
+        }
+      };
+
+      loadTimeline();
+    }
+  }, [candidate.id, isListView, compact, makeRequest]);
 
   const handleStageChange = (newStage) => {
     if (newStage !== candidate.stage) {
       onStageChange?.(candidate.id, newStage);
     }
   };
-
-  const stageColorClass = CANDIDATE_STAGE_COLORS[candidate.stage] || 'bg-gray-100 text-gray-800';
-  const isListView = viewMode === 'list';
 
   const CardComponent = ({ isDragging = false, dragHandleProps = {}, innerRef = null }) => (
     <Card
@@ -308,6 +338,37 @@ export const CandidateCard = ({
               )}
             </div>
           </div>
+
+          {/* Timeline Section - Only in list view when not compact */}
+          {isListView && !compact && (
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                  Progress Timeline
+                </h4>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {CANDIDATE_STAGE_LABELS[candidate.stage]}
+                </div>
+              </div>
+              
+              {timelineLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-2 text-sm text-gray-500">Loading timeline...</span>
+                </div>
+              ) : (
+                <CandidateTimeline 
+                  currentStage={candidate.stage} 
+                  timeline={timeline}
+                  compact={true}
+                  showLabels={true}
+                  showDates={false}
+                  className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
+                />
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

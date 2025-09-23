@@ -2,7 +2,7 @@ import React from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { CandidateCard } from './CandidateCard.jsx';
 
-const ITEM_HEIGHT = 120; // Height of each candidate card
+const ITEM_HEIGHT = 180; // Height of each candidate card with timeline
 const CONTAINER_HEIGHT = 600; // Height of the virtualized container
 
 export const VirtualizedList = ({
@@ -29,7 +29,7 @@ export const VirtualizedList = ({
             onEdit={onEdit}
             onDelete={onDelete}
             onStageChange={onStageChange}
-            compact={true}
+            compact={false} // Set to false to show timeline in list view
             viewMode={viewMode}
           />
         </div>

@@ -8,6 +8,8 @@ import { useCandidatesStore } from '../../../store/candidatesStore.js';
 import { useJobsStore } from '../../../store/jobsStore.js';
 import { jobsApi } from '../../../api/jobs.js';
 import { useCandidates } from '../hooks/useCandidates.js';
+import { isValidStageTransition } from '../../../utils/helpers.js';
+import { CANDIDATE_STAGE_LABELS } from '../../../utils/constants.js';
 
 const KanbanPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -55,9 +57,25 @@ const KanbanPage = () => {
 
   const handleStageChange = async (candidateId, newStage) => {
     try {
+      // Find the current candidate to get their current stage
+      const allCandidates = Object.values(candidatesByStage).flat();
+      const candidate = allCandidates.find(c => c.id === candidateId);
+      if (!candidate) {
+        alert('Candidate not found');
+        return;
+      }
+
+      // Validate the stage transition
+      if (!isValidStageTransition(candidate.stage, newStage)) {
+        alert(`Invalid transition from ${CANDIDATE_STAGE_LABELS[candidate.stage]} to ${CANDIDATE_STAGE_LABELS[newStage]}`);
+        return;
+      }
+
       await moveCandidateToStage(candidateId, newStage);
+      console.log(`Successfully moved candidate ${candidateId} to ${newStage}`);
     } catch (error) {
       console.error('Failed to move candidate:', error);
+      alert('Failed to update candidate stage. Please try again.');
     }
   };
 
