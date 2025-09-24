@@ -227,16 +227,16 @@ export const AssessmentPreview = ({ assessment, isLivePreview = true }) => {
         input = (
           <div className="space-y-2">
             {question.options?.map((option) => (
-              <label key={option.id} className="flex items-center space-x-3 cursor-pointer">
+              <label key={option.id} className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200">
                 <input
                   type="radio"
                   name={question.id}
                   value={option.value}
                   checked={response?.value === option.value}
                   onChange={() => handleResponse(question.id, option.value)}
-                  className="text-blue-600"
+                  className="text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4"
                 />
-                <span className="text-gray-700 dark:text-gray-300">{option.text}</span>
+                <span className="text-gray-900 dark:text-gray-100 font-medium">{option.text}</span>
               </label>
             ))}
           </div>
@@ -249,7 +249,7 @@ export const AssessmentPreview = ({ assessment, isLivePreview = true }) => {
             {question.options?.map((option) => {
               const selectedValues = Array.isArray(response?.value) ? response.value : [];
               return (
-                <label key={option.id} className="flex items-center space-x-3 cursor-pointer">
+                <label key={option.id} className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200">
                   <input
                     type="checkbox"
                     value={option.value}
@@ -260,9 +260,9 @@ export const AssessmentPreview = ({ assessment, isLivePreview = true }) => {
                         : selectedValues.filter(v => v !== option.value);
                       handleResponse(question.id, newValues);
                     }}
-                    className="text-blue-600"
+                    className="text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">{option.text}</span>
+                  <span className="text-gray-900 dark:text-gray-100 font-medium">{option.text}</span>
                 </label>
               );
             })}
@@ -272,7 +272,7 @@ export const AssessmentPreview = ({ assessment, isLivePreview = true }) => {
 
       case QUESTION_TYPES.FILE_UPLOAD:
         input = (
-          <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
+          <div className="p-4 border border-dashed border-gray-300 rounded-lg text-center">
             <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
             <p className="text-sm text-gray-600">File upload would be available in the actual assessment</p>
             <p className="text-xs text-gray-500 mt-1">

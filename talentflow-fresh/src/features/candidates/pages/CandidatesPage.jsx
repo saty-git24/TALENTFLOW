@@ -138,38 +138,38 @@ const CandidatesPage = () => {
       )}
 
       {/* Filters */}
-      <div className="mb-6 bg-white p-4 rounded-lg border border-gray-200">
+      <div className="mb-6 bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <input
             type="text"
             placeholder="Search candidates..."
             value={filters.search}
             onChange={(e) => handleFilterChange({ search: e.target.value })}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+            className="block w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-600 dark:placeholder-gray-300 placeholder:font-medium placeholder:px-1 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:bg-white dark:focus:bg-gray-600 hover:bg-white dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 min-h-[48px]"
           />
           
           <select
             value={filters.stage}
             onChange={(e) => handleFilterChange({ stage: e.target.value })}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+            className="block w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium min-h-[48px]"
           >
-            <option value="">All stages</option>
-            <option value="applied">Applied</option>
-            <option value="screen">Screening</option>
-            <option value="tech">Technical</option>
-            <option value="offer">Offer</option>
-            <option value="hired">Hired</option>
-            <option value="rejected">Rejected</option>
+            <option value="" className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-3">All stages</option>
+            <option value="applied" className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-3">Applied</option>
+            <option value="screen" className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-3">Screening</option>
+            <option value="tech" className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-3">Technical</option>
+            <option value="offer" className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-3">Offer</option>
+            <option value="hired" className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-3">Hired</option>
+            <option value="rejected" className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-3">Rejected</option>
           </select>
           
           <select
             value={filters.jobId}
             onChange={(e) => handleFilterChange({ jobId: e.target.value })}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+            className="block w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium min-h-[48px]"
           >
-            <option value="">All jobs</option>
+            <option value="" className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-3">All jobs</option>
             {jobs.map(job => (
-              <option key={job.id} value={job.id}>
+              <option key={job.id} value={job.id} className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-3">
                 {job.title}
               </option>
             ))}

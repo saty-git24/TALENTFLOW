@@ -26,7 +26,7 @@ export const KanbanColumn = ({
       ref={setNodeRef}
       className={cn(
         'kanban-column flex-shrink-0 w-80 min-h-96',
-        isOver && 'bg-blue-50 border-blue-200 border-2 border-dashed rounded-lg'
+        isOver && 'bg-blue-50 border-blue-200 border border-dashed rounded-lg'
       )}
     >
       {/* Column Header */}
@@ -39,7 +39,7 @@ export const KanbanColumn = ({
 
       {/* Drop Zone Indicator */}
       {isOver && (
-        <div className="mb-4 p-4 border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg text-center">
+        <div className="mb-4 p-4 border border-dashed border-blue-300 bg-blue-50 rounded-lg text-center">
           <p className="text-blue-600 text-sm font-medium">Drop candidate here</p>
         </div>
       )}

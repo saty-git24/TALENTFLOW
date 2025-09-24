@@ -56,29 +56,29 @@ export const Pagination = ({
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
   return (
-    <div className={cn('flex items-center justify-between px-4 sm:px-6 py-5 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-sm', className)}>
+    <div className={cn('flex items-center justify-between px-6 sm:px-8 py-6 bg-white dark:bg-gray-800 border-t-2 border-gray-200 dark:border-gray-700 shadow-sm', className)}>
       <div className="flex items-center justify-between w-full gap-4 sm:gap-6">
         {/* Results info */}
-        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-          Showing <span className="font-semibold text-gray-900 dark:text-gray-100 mx-1">{startItem}</span> to{' '}
-          <span className="font-semibold text-gray-900 dark:text-gray-100 mx-1">{endItem}</span> of{' '}
-          <span className="font-semibold text-gray-900 dark:text-gray-100 mx-1">{totalItems}</span> results
+        <div className="flex items-center text-sm text-gray-700 dark:text-gray-300 px-1">
+          Showing <span className="font-semibold text-gray-900 dark:text-gray-100 mx-1 px-1">{startItem}</span> to{' '}
+          <span className="font-semibold text-gray-900 dark:text-gray-100 mx-1 px-1">{endItem}</span> of{' '}
+          <span className="font-semibold text-gray-900 dark:text-gray-100 mx-1 px-1">{totalItems}</span> results
         </div>
 
         {/* Page size selector */}
         {showPageSizeSelector && (
           <div className="flex items-center space-x-4">
-            <label htmlFor="pageSize" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="pageSize" className="text-sm font-medium text-gray-900 dark:text-gray-100 px-1">
               Show:
             </label>
             <select
               id="pageSize"
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="rounded-lg border-gray-300 dark:border-gray-600 px-4 py-3 text-sm font-semibold shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 min-w-[90px] bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-3 text-sm font-semibold shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 min-w-[90px] min-h-[48px]"
             >
               {pageSizeOptions.map(size => (
-                <option key={size} value={size} className="bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100 py-2">
+                <option key={size} value={size} className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-3">
                   {size}
                 </option>
               ))}
@@ -87,7 +87,7 @@ export const Pagination = ({
         )}
 
         {/* Pagination controls */}
-        <nav className="flex items-center space-x-1">
+        <nav className="flex items-center space-x-2">
           <Button
             variant="outline"
             size="sm"
@@ -102,7 +102,7 @@ export const Pagination = ({
             {visiblePages.map((page, index) => {
               if (page === '...') {
                 return (
-                  <span key={index} className="px-3 py-1 text-gray-500">
+                  <span key={index} className="px-3 py-2 text-gray-600 dark:text-gray-400">
                     ...
                   </span>
                 );

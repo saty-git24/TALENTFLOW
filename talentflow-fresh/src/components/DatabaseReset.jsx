@@ -35,7 +35,7 @@ const DatabaseReset = () => {
       <h1 className="text-2xl font-bold text-gray-900 mb-4">Database Reset</h1>
       <div className="text-lg text-gray-600 mb-6">{status}</div>
       {isResetting && (
-        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+        <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
       )}
     </div>
   );

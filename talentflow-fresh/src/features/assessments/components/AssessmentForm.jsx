@@ -233,7 +233,7 @@ export const AssessmentForm = ({
 
       case QUESTION_TYPES.FILE_UPLOAD:
         return (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+          <div className="border border-dashed border-gray-300 rounded-lg p-6 text-center">
             <div className="space-y-2">
               <p className="text-gray-600">Click to upload or drag and drop</p>
               <p className="text-xs text-gray-500">

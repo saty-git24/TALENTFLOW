@@ -182,7 +182,7 @@ const CandidateDetailPage = () => {
           <Select
             value={candidate.stage}
             onChange={(e) => handleStageChange(e.target.value)}
-            className="w-40"
+            className="w-56 min-w-56"
           >
             {getNextPossibleStages(candidate?.stage || '').length > 0 ? (
               // Show current stage + next possible stages
@@ -354,12 +354,12 @@ const CandidateDetailPage = () => {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Visual Timeline Progress */}
-          <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-            <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-              <div className="w-1 h-4 bg-blue-500 rounded-full mr-2"></div>
+          <div className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+            <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <div className="w-1 h-5 bg-blue-500 rounded-full mr-3"></div>
               Progress Timeline
             </h4>
-            <div className="bg-gray-50 rounded-lg p-3">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
               <CandidateTimeline 
                 currentStage={candidate.stage} 
                 timeline={timeline}

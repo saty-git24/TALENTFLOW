@@ -42,20 +42,20 @@ export const JobSelectorModal = ({ isOpen, onClose }) => {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Select Job Role">
-      <div className="space-y-4">
+      <div className="space-y-6 py-4">
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <div className="relative px-1">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             placeholder="Search jobs by title, department, location..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-11"
           />
         </div>
 
         {/* Job List */}
-        <div className="max-h-96 overflow-y-auto space-y-3">
+        <div className="max-h-96 overflow-y-auto space-y-3 pt-4 px-1">
           {filteredJobs.length > 0 ? (
             filteredJobs.map((job) => (
               <Card 
@@ -126,7 +126,7 @@ export const JobSelectorModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between pt-4 px-2 border-t border-gray-200 dark:border-gray-700">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''} available
           </p>

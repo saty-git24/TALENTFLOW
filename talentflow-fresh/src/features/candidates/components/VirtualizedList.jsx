@@ -2,7 +2,7 @@ import React from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { CandidateCard } from './CandidateCard.jsx';
 
-const ITEM_HEIGHT = 190; // Height of each candidate card with improved spacing
+const ITEM_HEIGHT = 184; // Height adjusted for increased top padding
 const CONTAINER_HEIGHT = 600; // Height of the virtualized container
 
 export const VirtualizedList = ({
@@ -30,13 +30,13 @@ export const VirtualizedList = ({
     
     return (
       <div style={style}>
-        <div className="px-4 py-4">
+        <div className="px-4 py-1 pb-4">
           <CandidateCard
             candidate={candidate}
             job={candidateJob}
             onDelete={onDelete}
             onStageChange={onStageChange}
-            compact={false} // Set to false to show timeline in list view
+            compact={false} // Keep false but reduce card height through styling
             viewMode={viewMode}
           />
         </div>

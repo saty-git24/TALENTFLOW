@@ -8,49 +8,10 @@ import {
   Settings,
   X,
   ChevronLeft,
-  ChevronRight,
-  Sun,
-  Moon
+  ChevronRight
 } from 'lucide-react';
 import { useAppStore } from '../../store/index.js';
 import { cn } from '../../utils/helpers.js';
-
-// Small ThemeToggle component kept local to Sidebar for simplicity
-function ThemeToggle() {
-  // track whether we're currently in light mode (true = white background)
-  const [isLight, setIsLight] = React.useState(() => {
-    try {
-      const saved = window.localStorage.getItem('tf-theme')
-      if (saved === 'light') return true
-      if (saved === 'dark') return false
-      return !document.documentElement.classList.contains('tf-dark')
-    } catch (e) {
-      return !document.documentElement.classList.contains('tf-dark')
-    }
-  })
-
-  React.useEffect(() => {
-    // keep DOM in sync if initial state says dark
-    const el = document.documentElement
-    if (isLight) {
-      el.classList.remove('tf-dark')
-      try { window.localStorage.setItem('tf-theme', 'light') } catch (e) {}
-    } else {
-      el.classList.add('tf-dark')
-      try { window.localStorage.setItem('tf-theme', 'dark') } catch (e) {}
-    }
-  }, [isLight])
-
-  const toggle = () => {
-    setIsLight((v) => !v)
-  }
-
-  return (
-    <button onClick={toggle} className="p-1 rounded-md text-gray-600 hover:text-gray-900" title={isLight ? 'Switch to dark' : 'Switch to light'} aria-pressed={!isLight}>
-      {isLight ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-    </button>
-  )
-}
 
 const navigationItems = [
   {
@@ -97,89 +58,89 @@ export const Sidebar = () => {
       {/* Sidebar */}
       <div
         className={cn(
-          'fixed inset-y-0 left-0 z-50 bg-white shadow-lg transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
-          sidebarCollapsed ? 'w-20' : 'w-64'
+          'fixed inset-y-0 left-0 z-50 bg-white dark:bg-gray-800 shadow-lg lg:translate-x-0 lg:static lg:inset-0 transition-transform duration-200 ease-in-out',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+          sidebarCollapsed ? 'w-16' : 'w-64'
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo area */}
-          <div className="flex items-center justify-between h-16 px-4 sm:px-6 border-b border-gray-200">
+          <div className="flex items-center justify-between h-16 px-4 sm:px-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold text-gray-900 lg:hidden">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 lg:hidden">
                 Menu
               </h2>
-              {/* Desktop collapse button moved to the top */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={toggleSidebarCollapsed}
-                  className="ml-2 p-1 rounded-md text-gray-600 hover:text-gray-900 hidden lg:inline-flex"
-                  title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                >
-                  {sidebarCollapsed ? (
-                    <ChevronRight className="w-4 h-4" />
-                  ) : (
-                    <ChevronLeft className="w-4 h-4" />
-                  )}
-                </button>
-
-                {/* Theme toggle (reflects current state) */}
-                <ThemeToggle />
-              </div>
+              {/* Desktop collapse button */}
+              <button
+                onClick={toggleSidebarCollapsed}
+                className="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-black hover:bg-gray-100 dark:hover:bg-gray-700 hidden lg:inline-flex"
+                title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {sidebarCollapsed ? (
+                  <ChevronRight className="w-4 h-4" />
+                ) : (
+                  <ChevronLeft className="w-4 h-4" />
+                )}
+              </button>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-1 rounded-md text-gray-600 hover:text-gray-900 lg:hidden"
+              className="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-black hover:bg-gray-100 dark:hover:bg-gray-700 lg:hidden transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Navigation */}
-          <nav className={cn('flex-1 px-4 sm:px-6 py-6', sidebarCollapsed ? 'space-y-2' : 'space-y-1')}>
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname.startsWith(item.href);
+          <nav className={cn('flex-1 py-6', sidebarCollapsed ? 'px-1' : 'px-4 sm:px-6')}>
+            <div className={cn(sidebarCollapsed ? 'space-y-2' : 'space-y-1')}>
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname.startsWith(item.href);
 
-              return (
-                <NavLink
-                  key={item.name}
-                  to={item.href}
-                  className={cn(
-                    'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
-                    isActive
-                      ? 'bg-primary-100 text-primary-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  )}
-                  onClick={() => {
-                    // Close sidebar on mobile after navigation
-                    if (window.innerWidth < 1024) {
-                      setSidebarOpen(false);
-                    }
-                  }}
-                >
-                  <Icon
+                return (
+                  <NavLink
+                    key={item.name}
+                    to={item.href}
                     className={cn(
-                      'h-5 w-5 transition-colors',
+                      'group flex items-center text-sm font-medium rounded-md',
+                      sidebarCollapsed 
+                        ? 'p-3 justify-center' 
+                        : 'px-3 py-2',
                       isActive
-                        ? 'text-primary-600'
-                        : 'text-gray-400 group-hover:text-gray-500'
+                        ? 'bg-primary-100 text-primary-700 dark:bg-blue-900/30 dark:text-blue-200'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-black'
                     )}
-                  />
-                  {!sidebarCollapsed && (
-                    <span className="ml-3">{item.name}</span>
-                  )}
-                </NavLink>
-              );
-            })}
+                    title={sidebarCollapsed ? item.name : undefined}
+                    onClick={() => {
+                      // Close sidebar on mobile after navigation
+                      if (window.innerWidth < 1024) {
+                        setSidebarOpen(false);
+                      }
+                    }}
+                  >
+                    <Icon
+                      className={cn(
+                        'flex-shrink-0 h-5 w-5',
+                        isActive
+                          ? 'text-primary-600 dark:text-blue-400'
+                          : 'text-gray-400 dark:text-gray-400 group-hover:text-gray-500 dark:group-hover:text-black'
+                      )}
+                    />
+                    {!sidebarCollapsed && (
+                      <span className="ml-3">{item.name}</span>
+                    )}
+                  </NavLink>
+                );
+              })}
+            </div>
           </nav>
 
           {/* Footer */}
-          <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-xs text-gray-500 text-center">
+          <div className="px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-center">
+            <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
               {!sidebarCollapsed && 'TalentFlow v1.0'}
             </div>
-            {/* Collapse button moved to the top */}
           </div>
         </div>
       </div>

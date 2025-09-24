@@ -4,7 +4,7 @@ import { cn } from '../../utils/helpers.js';
 export const Card = ({ children, className, ...props }) => (
   <div
     className={cn(
-      'rounded-lg border border-gray-200 bg-white shadow-sm',
+      'rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow duration-200',
       className
     )}
     {...props}
@@ -15,7 +15,7 @@ export const Card = ({ children, className, ...props }) => (
 
 export const CardHeader = ({ children, className, ...props }) => (
   <div
-    className={cn('p-6 pb-4', className)}
+    className={cn('p-6 pb-4 px-7', className)}
     {...props}
   >
     {children}
@@ -24,7 +24,7 @@ export const CardHeader = ({ children, className, ...props }) => (
 
 export const CardContent = ({ children, className, ...props }) => (
   <div
-    className={cn('p-6 pt-0', className)}
+    className={cn('p-6 pt-0 px-7', className)}
     {...props}
   >
     {children}
@@ -33,7 +33,7 @@ export const CardContent = ({ children, className, ...props }) => (
 
 export const CardFooter = ({ children, className, ...props }) => (
   <div
-    className={cn('flex items-center p-6 pt-0', className)}
+    className={cn('flex items-center p-6 pt-0 px-7', className)}
     {...props}
   >
     {children}
@@ -42,7 +42,7 @@ export const CardFooter = ({ children, className, ...props }) => (
 
 export const CardTitle = ({ children, className, ...props }) => (
   <h3
-    className={cn('text-lg font-semibold leading-6 text-gray-900', className)}
+    className={cn('text-lg font-semibold leading-6 text-gray-900 dark:text-gray-100 px-1', className)}
     {...props}
   >
     {children}
@@ -51,7 +51,7 @@ export const CardTitle = ({ children, className, ...props }) => (
 
 export const CardDescription = ({ children, className, ...props }) => (
   <p
-    className={cn('text-sm text-gray-500', className)}
+    className={cn('text-sm text-gray-600 dark:text-gray-400 px-1', className)}
     {...props}
   >
     {children}
