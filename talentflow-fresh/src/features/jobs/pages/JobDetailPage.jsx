@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -24,6 +24,11 @@ import { formatDate, formatRelativeTime } from '../../../utils/helpers.js';
 import { CANDIDATE_STAGE_LABELS } from '../../../utils/constants.js';
 
 const JobDetailPage = () => {
+  const [showToast, setShowToast] = useState(false);
+  function handleShowToast() {
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  }
   const { jobId } = useParams();
   const navigate = useNavigate();
   const [editingJob, setEditingJob] = React.useState(null);
@@ -335,14 +340,29 @@ const JobDetailPage = () => {
               <Button 
                 variant="outline" 
                 className="w-full justify-start"
-                onClick={() => navigator.share?.({
-                  title: job.title,
-                  text: job.description,
-                  url: window.location.href
-                }) || navigator.clipboard?.writeText(window.location.href)}
+                onClick={async () => {
+                  if (navigator.share) {
+                    try {
+                      await navigator.share({
+                        title: job.title,
+                        text: job.description,
+                        url: window.location.href
+                      });
+                    } catch (e) {}
+                  } else if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(window.location.href);
+                    handleShowToast();
+                  }
+                }}
               >
                 Share Job
               </Button>
+      {/* Toast Notification */}
+      {showToast && (
+        <div style={{position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', zIndex: 1000}} className="bg-black text-white px-4 py-2 rounded shadow-lg animate-fade-in">
+          Link copied to clipboard!
+        </div>
+      )}
             </CardContent>
           </Card>
         </div>

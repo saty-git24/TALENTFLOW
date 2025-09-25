@@ -19,22 +19,30 @@ import './styles/globals.css'
 
 // Initialize MSW and database
 async function enableMocking() {
-  if (import.meta.env.DEV) {
-    try {
-      const { worker } = await import('./api/mockApi.js')
-      await worker.start({
-        onUnhandledRequest: 'bypass',
-      })
-      console.log('MSW worker started successfully')
-    } catch (error) {
-      console.error('Failed to start MSW worker:', error)
+  // Always enable MSW, even in production, and force root scope
+  try {
+    const { worker } = await import('./api/mockApi.js')
+    await worker.start({
+      serviceWorker: {
+        url: '/mockServiceWorker.js',
+        options: { scope: '/' }
+      },
+      onUnhandledRequest: 'bypass',
+    })
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(
+        () => console.log('MSW worker registered and ready'),
+        (err) => console.error('MSW worker registration failed:', err)
+      )
     }
+  } catch (error) {
+    console.error('Failed to start MSW worker:', error)
   }
 }
 
 async function startApp() {
   try {
-    await enableMocking()
+    await enableMocksAndStartApp()
     
     // Initialize database
     const { initializeDatabase } = await import('./db/index.js')
@@ -64,6 +72,49 @@ async function startApp() {
         </details>
       </div>
     )
+  }
+}
+
+async function enableMocksAndStartApp() {
+  console.log('[DEBUG] App starting at', window.location.href);
+  console.log('[DEBUG] NODE_ENV:', import.meta.env.MODE);
+  if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+    console.log('[DEBUG] Service workers supported, attempting registration...');
+    try {
+      // Register the service worker at the root scope
+      const registration = await navigator.serviceWorker.register("/mockServiceWorker.js", {
+        scope: "/",
+      });
+      console.log("[MSW] Service worker registered:", registration);
+    } catch (error) {
+      console.error("[MSW] Service worker registration failed:", error);
+    }
+  } else {
+    console.warn("[MSW] Service workers are not supported in this environment.");
+  }
+
+  // Start MSW and wait for it to be ready
+  try {
+    const { worker } = await import('./api/mockApi.js')
+    await worker.start({
+      serviceWorker: {
+        url: "/mockServiceWorker.js",
+        options: { scope: "/" },
+      },
+      onUnhandledRequest: "bypass",
+    });
+    console.log('[MSW] worker.start() called');
+  } catch (err) {
+    console.error('[MSW] worker.start() failed:', err);
+  }
+
+  // Initialize IndexedDB and seed data
+  try {
+    const { initializeDatabase } = await import('./db/index.js')
+    await initializeDatabase();
+    console.log('[DEBUG] Database initialized');
+  } catch (err) {
+    console.error('[DEBUG] Database initialization failed:', err);
   }
 }
 
