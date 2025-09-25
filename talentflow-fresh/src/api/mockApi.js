@@ -27,10 +27,10 @@ function patchAssessmentOptions(assessment) {
   return assessment;
 }
 
-// API response with random latency (200-1200ms) and random error (5-10%)
+// API response with random latency (200-1200ms) and random error (1-2%)
 const createApiResponse = async (handler) => {
-  // Random error: 5-10% chance
-  const errorChance = 0.05 + Math.random() * 0.05; // 0.05 to 0.10
+  // Random error: 1-2% chance
+  const errorChance = 0.01 + Math.random() * 0.01; // 0.01 to 0.02
   if (Math.random() < errorChance) {
     await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 1000));
     throw new Error('Simulated network error');
