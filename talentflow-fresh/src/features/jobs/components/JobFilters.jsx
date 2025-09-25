@@ -103,7 +103,6 @@ export const JobFilters = ({
               value={filters.status}
               onChange={(e) => onFiltersChange({ status: e.target.value })}
               options={[
-                { label: 'All statuses', value: '' },
                 { label: 'Active', value: 'active' },
                 { label: 'Archived', value: 'archived' }
               ]}

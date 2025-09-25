@@ -43,7 +43,7 @@ export const Select = React.forwardRef(({
         {...props}
       >
         {placeholder && (
-          <option value="" disabled className="text-gray-600 dark:text-gray-300 py-3">
+          <option value="" className="text-gray-600 dark:text-gray-300 py-3">
             {placeholder}
           </option>
         )}
