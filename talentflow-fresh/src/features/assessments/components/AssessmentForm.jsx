@@ -97,7 +97,6 @@ export const AssessmentForm = ({
       try {
         await onSubmit();
       } catch (error) {
-        console.error('Failed to submit assessment:', error);
       } finally {
         setIsSubmitting(false);
       }
@@ -192,7 +191,10 @@ export const AssessmentForm = ({
         return (
           <div className="space-y-2">
             {question.options?.map(option => (
-              <label key={option.id} className="flex items-center space-x-3 cursor-pointer">
+              <label
+                key={option.id}
+                className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
+              >
                 <input
                   type="radio"
                   name={question.id}
@@ -201,7 +203,7 @@ export const AssessmentForm = ({
                   onChange={(e) => onChange(e.target.value)}
                   className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                 />
-                <span className="text-gray-700">{option.label}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{option.label}</span>
               </label>
             ))}
           </div>
@@ -211,7 +213,10 @@ export const AssessmentForm = ({
         return (
           <div className="space-y-2">
             {question.options?.map(option => (
-              <label key={option.id} className="flex items-center space-x-3 cursor-pointer">
+              <label
+                key={option.id}
+                className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
+              >
                 <input
                   type="checkbox"
                   value={option.value}
@@ -225,7 +230,7 @@ export const AssessmentForm = ({
                   }}
                   className="w-4 h-4 text-primary-600 focus:ring-primary-500 rounded"
                 />
-                <span className="text-gray-700">{option.label}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{option.label}</span>
               </label>
             ))}
           </div>

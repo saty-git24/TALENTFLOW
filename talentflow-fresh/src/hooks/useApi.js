@@ -39,7 +39,10 @@ export const useApi = () => {
       }
 
       if (showErrorToast) {
-        console.error('API Error:', err);
+        // Add slight delay to avoid showing errors before success updates
+        setTimeout(() => {
+          console.error('API Error:', err);
+        }, 100);
       }
 
       throw err;

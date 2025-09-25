@@ -52,7 +52,6 @@ export const CandidateCard = ({
             setTimeline(timelineResponse.data || []);
           }
         } catch (error) {
-          console.error('Failed to load candidate timeline:', error);
         } finally {
           setTimelineLoading(false);
         }

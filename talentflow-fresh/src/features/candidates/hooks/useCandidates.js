@@ -79,15 +79,17 @@ export const useCandidates = (initialFilters = {}) => {
 
   // Move candidate to different stage
   const moveCandidateToStage = useCallback(async (candidateId, newStage, changedBy = 'user') => {
+    // Patch: Always update updatedAt to now when moving stage
+    const updates = { stage: newStage, changedBy, updatedAt: new Date().toISOString() };
     return makeRequest(
-      () => candidatesApi.moveCandidateStage(candidateId, newStage, changedBy),
+      () => candidatesApi.updateCandidate(candidateId, updates),
       {
         onSuccess: (response) => {
-          moveCandidateStage(candidateId, newStage, changedBy);
+          updateCandidate(candidateId, response.candidate);
         }
       }
     );
-  }, [makeRequest, moveCandidateStage]);
+  }, [makeRequest, updateCandidate]);
 
   // Delete candidate
   const deleteCandidate = useCallback(async (id) => {

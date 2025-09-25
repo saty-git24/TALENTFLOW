@@ -18,8 +18,8 @@ import { Badge } from '../../../components/ui/Badge.jsx';
 import { LoadingPage } from '../../../components/common/LoadingSpinner.jsx';
 import { JobModal } from '../components/JobModal.jsx';
 import { useJobs } from '../hooks/useJobs.js';
+import { useCandidateStats } from '../../../hooks/useCandidateStats.js';
 import { jobsApi } from '../../../api/jobs.js';
-import { useCandidatesStore } from '../../../store/candidatesStore.js';
 import { formatDate, formatRelativeTime } from '../../../utils/helpers.js';
 import { CANDIDATE_STAGE_LABELS } from '../../../utils/constants.js';
 
@@ -31,7 +31,9 @@ const JobDetailPage = () => {
   const [loading, setLoading] = React.useState(true);
 
   const { updateJob, archiveJob, unarchiveJob } = useJobs();
-  const { candidates } = useCandidatesStore();
+  
+  // Use optimized candidate stats hook instead of loading all candidates
+  const { stats: candidateStats, loading: candidatesLoading } = useCandidateStats(jobId);
 
   // Load job details
   React.useEffect(() => {
@@ -53,21 +55,11 @@ const JobDetailPage = () => {
     }
   }, [jobId]);
 
-  // Get candidates for this job (coerce jobId to Number to match DB ids)
-  const jobIdNum = job ? Number(job.id) : (jobId ? Number(jobId) : null);
-  const jobCandidates = React.useMemo(() => {
-    if (jobIdNum === null || jobIdNum === undefined) return [];
-    return candidates.filter(candidate => candidate.jobId === jobIdNum);
-  }, [candidates, jobIdNum]);
-
-  // Get candidate stats by stage
-  const candidateStats = React.useMemo(() => {
-    const stats = {};
-    Object.keys(CANDIDATE_STAGE_LABELS).forEach(stage => {
-      stats[stage] = jobCandidates.filter(c => c.stage === stage).length;
-    });
-    return stats;
-  }, [jobCandidates]);
+  // Get total candidate count
+  const totalCandidates = React.useMemo(() => {
+    if (!candidateStats) return 0;
+    return Object.values(candidateStats).reduce((total, count) => total + count, 0);
+  }, [candidateStats]);
 
   const handleUpdateJob = async (jobData) => {
     if (editingJob) {
@@ -170,7 +162,7 @@ const JobDetailPage = () => {
             </Button>
           )}
           
-          <Link to={`/jobs/${job.id}/assessment`}>
+          <Link to={`/assessments/${job.id}`}>
             <Button>
               <FileCheck className="w-4 h-4 mr-2" />
               Assessment
@@ -286,27 +278,31 @@ const JobDetailPage = () => {
         <div className="space-y-6">
           {/* Candidate Stats */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Candidates ({jobCandidates.length})</CardTitle>
-              <Link to={`/candidates?jobId=${job.id}`}>
-                <Button size="sm" variant="outline">
-                  View All
-                </Button>
-              </Link>
-            </CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Candidates ({totalCandidates})</CardTitle>
+              </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {Object.entries(CANDIDATE_STAGE_LABELS).map(([stage, label]) => (
-                  <div key={stage} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">{label}</span>
-                    <Badge variant="secondary" size="sm">
-                      {candidateStats[stage] || 0}
-                    </Badge>
-                  </div>
-                ))}
+                {Object.entries(CANDIDATE_STAGE_LABELS).map(([stage, label]) => {
+                  let variant = 'secondary';
+                  if (stage === 'applied') variant = 'info';
+                  else if (stage === 'screen') variant = 'warning';
+                  else if (stage === 'tech') variant = 'default';
+                  else if (stage === 'offer') variant = 'secondary';
+                  else if (stage === 'hired') variant = 'success';
+                  else if (stage === 'rejected') variant = 'error';
+                  return (
+                    <div key={stage} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">{label}</span>
+                      <Badge variant={variant} size="sm">
+                        {candidateStats[stage] || 0}
+                      </Badge>
+                    </div>
+                  );
+                })}
               </div>
               
-              {jobCandidates.length === 0 ? (
+              {totalCandidates === 0 ? (
                 <div className="text-center py-6">
                   <p className="text-gray-500 text-sm">No candidates yet</p>
                 </div>
@@ -329,13 +325,6 @@ const JobDetailPage = () => {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link to={`/jobs/${job.id}/assessment`} className="block">
-                <Button variant="outline" className="w-full justify-start">
-                  <FileCheck className="w-4 h-4 mr-2" />
-                  Manage Assessment
-                </Button>
-              </Link>
-              
               <Link to={`/candidates?jobId=${job.id}`} className="block">
                 <Button variant="outline" className="w-full justify-start">
                   <Users className="w-4 h-4 mr-2" />

@@ -10,6 +10,7 @@ import {
   Plus,
   Edit,
   Eye,
+  Wrench,
   Play,
   Calendar
 } from 'lucide-react';
@@ -24,14 +25,18 @@ import { formatDate, formatRelativeTime } from '../../../utils/helpers.js';
 const JobAssessmentView = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
-  const { getJobById } = useJobsStore();
+  const { getJobById, currentJob } = useJobsStore();
   const { initializeBuilder } = useAssessmentsStore();
   
   const [loading, setLoading] = useState(true);
   const [assessmentStats, setAssessmentStats] = useState(null);
 
   // Ensure jobId is properly converted for lookup
-  const job = getJobById(jobId);
+  let job = getJobById(jobId);
+  // Fallback: if not found by ID, use currentJob if it matches
+  if (!job && currentJob && (currentJob.id === jobId || String(currentJob.id) === String(jobId))) {
+    job = currentJob;
+  }
 
   useEffect(() => {
     if (job) {
@@ -57,8 +62,10 @@ const JobAssessmentView = () => {
 
   const handleCreateAssessment = () => {
     // Initialize builder and navigate to assessment page
-    initializeBuilder(String(jobId));
-    navigate(`/assessments/${jobId}`);
+    if (currentJob) {
+      initializeBuilder(String(currentJob.id));
+      navigate(`/assessments/${currentJob.id}`);
+    }
   };
 
   if (loading) {

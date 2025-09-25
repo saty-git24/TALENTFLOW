@@ -1,20 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, FileCheck, Eye, Edit, Play, Users, Clock, Trash2 } from 'lucide-react';
+import { Wrench } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.jsx';
 import { Card, CardHeader, CardContent, CardTitle } from '../../../components/ui/Card.jsx';
 import { Badge } from '../../../components/ui/Badge.jsx';
 import { JobSelectorModal } from '../components/JobSelectorModal.jsx';
+import { LoadingSpinner } from '../../../components/common/LoadingSpinner.jsx';
 import { useJobsStore } from '../../../store/jobsStore.js';
 import { useAssessmentsStore } from '../../../store/assessmentsStore.js';
+import { dbAPI } from '../../../db/index.js';
 import { formatDate, formatRelativeTime } from '../../../utils/helpers.js';
 
 const AssessmentsListPage = () => {
   const { jobs } = useJobsStore();
-  const { getAllAssessments, deleteAssessment } = useAssessmentsStore();
+  const { getAllAssessments, deleteAssessment, setSavedAssessments, getDeletedAssessmentIds } = useAssessmentsStore();
   const [isJobSelectorOpen, setIsJobSelectorOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   
-  // Get real assessments from store
+  // Load assessments from database on component mount
+  useEffect(() => {
+    const loadAssessmentsFromDatabase = async () => {
+      try {
+        setLoading(true);
+        // Get assessments from IndexedDB
+        const dbAssessments = await dbAPI.getAssessments();
+        
+        // Get current assessments from Zustand store
+        const storeAssessments = getAllAssessments();
+        
+        // Get list of deleted assessment IDs
+        const deletedIds = getDeletedAssessmentIds();
+        
+        // Merge database assessments into store if they don't exist and weren't deleted
+        if (dbAssessments && dbAssessments.length > 0) {
+          const mergedAssessments = [...storeAssessments];
+          
+          dbAssessments.forEach(dbAssessment => {
+            // Skip if this assessment was deleted by the user
+            if (deletedIds.includes(dbAssessment.id)) {
+              return;
+            }
+            
+            // Check if this assessment already exists in the store
+            const existsInStore = storeAssessments.some(
+              storeAssessment => storeAssessment.id === dbAssessment.id
+            );
+            
+            if (!existsInStore) {
+              // Add database assessment to the merged list
+              mergedAssessments.push(dbAssessment);
+            }
+          });
+          
+          // Update the store with the merged assessments
+          if (mergedAssessments.length > storeAssessments.length) {
+            setSavedAssessments(mergedAssessments);
+          }
+        }
+      } catch (error) {
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAssessmentsFromDatabase();
+  }, [getAllAssessments, setSavedAssessments, getDeletedAssessmentIds]);
+  
+  // Get real assessments from store (now includes database assessments)
   const savedAssessments = getAllAssessments();
   
   // Calculate stats from real assessments
@@ -31,9 +84,20 @@ const AssessmentsListPage = () => {
     return job?.title || 'Unknown Position';
   };
 
-  const handleDeleteAssessment = (assessmentId, assessmentTitle) => {
+  const handleDeleteAssessment = async (assessmentId, assessmentTitle) => {
     if (window.confirm(`Are you sure you want to delete the assessment "${assessmentTitle}"? This action cannot be undone.`)) {
-      deleteAssessment(assessmentId);
+      try {
+        // Delete from Zustand store (and mark as deleted)
+        deleteAssessment(assessmentId);
+        
+        // Optionally, also try to delete from IndexedDB to prevent re-seeding
+        try {
+          await dbAPI.deleteAssessment(assessmentId);
+        } catch (dbError) {
+          // If DB deletion fails, it's okay because we track deleted IDs
+        }
+      } catch (error) {
+      }
     }
   };
 
@@ -117,8 +181,16 @@ const AssessmentsListPage = () => {
       </div>
 
       {/* Assessments List */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {savedAssessments.map((assessment) => {
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
+          <span className="ml-3 text-gray-600">Loading assessments...</span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {savedAssessments
+          .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // Sort by creation date to maintain job order
+          .map((assessment) => {
           const totalQuestions = assessment.sections.reduce((count, section) => count + section.questions.length, 0);
           const totalSections = assessment.sections.length;
           
@@ -206,10 +278,11 @@ const AssessmentsListPage = () => {
             </Card>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {/* Empty State */}
-      {savedAssessments.length === 0 && (
+      {!loading && savedAssessments.length === 0 && (
         <Card>
           <CardContent className="text-center py-12 pt-16">
             <FileCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />

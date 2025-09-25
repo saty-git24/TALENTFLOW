@@ -236,7 +236,7 @@ export const AssessmentPreview = ({ assessment, isLivePreview = true }) => {
                   onChange={() => handleResponse(question.id, option.value)}
                   className="text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4"
                 />
-                <span className="text-gray-900 dark:text-gray-100 font-medium">{option.text}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{option.label || option.text}</span>
               </label>
             ))}
           </div>
@@ -262,7 +262,7 @@ export const AssessmentPreview = ({ assessment, isLivePreview = true }) => {
                     }}
                     className="text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4"
                   />
-                  <span className="text-gray-900 dark:text-gray-100 font-medium">{option.text}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{option.label || option.text}</span>
                 </label>
               );
             })}

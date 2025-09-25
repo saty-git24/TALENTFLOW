@@ -1,8 +1,9 @@
 import React from 'react';
 import { cn } from '../../utils/helpers.js';
 
-export const Card = ({ children, className, ...props }) => (
+export const Card = React.forwardRef(({ children, className, ...props }, ref) => (
   <div
+    ref={ref}
     className={cn(
       'rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow duration-200',
       className
@@ -11,7 +12,9 @@ export const Card = ({ children, className, ...props }) => (
   >
     {children}
   </div>
-);
+));
+
+Card.displayName = 'Card';
 
 export const CardHeader = ({ children, className, ...props }) => (
   <div

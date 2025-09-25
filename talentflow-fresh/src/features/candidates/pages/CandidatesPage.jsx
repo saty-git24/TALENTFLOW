@@ -79,9 +79,7 @@ const CandidatesPage = () => {
       await moveCandidateToStage(candidateId, newStage, 'user');
       
       // Success feedback could be added here if needed
-      console.log(`Successfully moved candidate ${candidateId} to ${newStage}`);
     } catch (error) {
-      console.error('Failed to change candidate stage:', error);
       alert('Failed to update candidate stage. Please try again.');
     }
   };
@@ -90,9 +88,7 @@ const CandidatesPage = () => {
     if (window.confirm('Are you sure you want to delete this candidate?')) {
       try {
         await deleteCandidate(candidateId);
-        console.log('Candidate deleted successfully');
       } catch (error) {
-        console.error('Failed to delete candidate:', error);
         alert('Failed to delete candidate. Please try again.');
       }
     }

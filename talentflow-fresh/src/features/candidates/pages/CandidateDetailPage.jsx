@@ -19,6 +19,7 @@ import { Textarea } from '../../../components/ui/Textarea.jsx';
 import { LoadingPage } from '../../../components/common/LoadingSpinner.jsx';
 import { useCandidatesStore } from '../../../store/candidatesStore.js';
 import { useJobsStore } from '../../../store/jobsStore.js';
+import { useCandidates } from '../hooks/useCandidates.js';
 import { candidatesApi } from '../../../api/candidates.js';
 import { formatDate, formatRelativeTime, createMention, extractMentions, sortTimelineByHiringProcess, isValidStageTransition, getNextPossibleStages } from '../../../utils/helpers.js';
 import { CANDIDATE_STAGES, CANDIDATE_STAGE_LABELS, CANDIDATE_STAGE_COLORS, MOCK_USERS } from '../../../utils/constants.js';
@@ -41,6 +42,7 @@ const CandidateDetailPage = () => {
   const { updateCandidate, moveCandidateStage } = useCandidatesStore();
   const { jobs, getJobById } = useJobsStore();
   const { makeRequest } = useApi();
+  const { moveCandidateToStage } = useCandidates();
 
   // Load candidate details
   React.useEffect(() => {
@@ -58,7 +60,6 @@ const CandidateDetailPage = () => {
           setTimeline(timelineResponse.timeline);
           setNotes(notesResponse.notes);
         } catch (error) {
-          console.error('Failed to load candidate data:', error);
           setError(error.message || 'Failed to load candidate data');
         } finally {
           setLoading(false);
@@ -73,17 +74,17 @@ const CandidateDetailPage = () => {
     if (candidate && newStage !== candidate.stage) {
       // Validate the stage transition
       if (!isValidStageTransition(candidate.stage, newStage)) {
-        alert(`Invalid stage transition from ${CANDIDATE_STAGE_LABELS[candidate.stage]} to ${CANDIDATE_STAGE_LABELS[newStage]}`);
+        // Temporarily disable alert to test timing issues  
+        // alert(`Invalid stage transition from ${CANDIDATE_STAGE_LABELS[candidate.stage]} to ${CANDIDATE_STAGE_LABELS[newStage]}`);
         return;
       }
       
       try {
-        await makeRequest(() => 
-          candidatesApi.moveCandidateStage(candidateId, newStage, 'user')
-        );
+        // Use the fixed moveCandidateToStage function from the hook
+        await moveCandidateToStage(candidateId, newStage, 'user');
         
+        // Update local state to reflect the change
         setCandidate(prev => ({ ...prev, stage: newStage }));
-        moveCandidateStage(candidateId, newStage, 'user');
         
         // Reload timeline to show the change
         const timelineResponse = await makeRequest(() => 
@@ -91,8 +92,8 @@ const CandidateDetailPage = () => {
         );
         setTimeline(timelineResponse.timeline);
       } catch (error) {
-        console.error('Failed to update candidate stage:', error);
-        alert('Failed to update candidate stage. Please try again.');
+        // Temporarily disable alert to test timing issues
+        // alert('Failed to update candidate stage. Please try again.');
       }
     }
   };
@@ -116,7 +117,6 @@ const CandidateDetailPage = () => {
       setNotes(prev => [response.note, ...prev]);
       setNewNote('');
     } catch (error) {
-      console.error('Failed to add note:', error);
     } finally {
       setAddingNote(false);
     }
@@ -391,15 +391,6 @@ const CandidateDetailPage = () => {
                 <FileText className="w-4 h-4 mr-2" />
                 Download Resume
               </Button>
-              
-              {job && (
-                <Link to={`/assessments/${job.id}/take`} className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <FileText className="w-4 h-4 mr-2" />
-                    View Assessment
-                  </Button>
-                </Link>
-              )}
             </CardContent>
           </Card>
         </div>

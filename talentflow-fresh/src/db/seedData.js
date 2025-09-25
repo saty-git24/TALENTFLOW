@@ -73,13 +73,66 @@ const requirements = [
 ];
 
 const generateRandomJob = (index) => {
+  // For first 3 jobs, use completely deterministic data
+  if (index < 3) {
+    const firstThreeJobs = [
+      {
+        title: 'Senior Frontend Developer',
+        department: 'Engineering',
+        status: 'active',
+        location: 'San Francisco, CA',
+        type: 'full-time',
+        salary: { min: 120000, max: 160000, currency: 'USD' },
+        tags: ['React', 'JavaScript', 'Frontend']
+      },
+      {
+        title: 'Python Developer',
+        department: 'Engineering', 
+        status: 'active',
+        location: 'Remote',
+        type: 'full-time',
+        salary: { min: 110000, max: 150000, currency: 'USD' },
+        tags: ['Python', 'Backend', 'API']
+      },
+      {
+        title: 'React Developer',
+        department: 'Engineering',
+        status: 'active', 
+        location: 'New York, NY',
+        type: 'full-time',
+        salary: { min: 115000, max: 155000, currency: 'USD' },
+        tags: ['React', 'JavaScript', 'Frontend']
+      }
+    ];
+    
+    const jobData = firstThreeJobs[index];
+    
+    return {
+      id: generateId(),
+      title: jobData.title,
+      slug: generateSlug(jobData.title) + '-' + Date.now() + '-' + index,
+      description: jobDescriptions[0], // Use first description consistently
+      requirements: requirements.slice(0, 3).join('\n• '),
+      status: jobData.status,
+      tags: jobData.tags,
+      location: jobData.location,
+      department: jobData.department,
+      type: jobData.type,
+      salary: jobData.salary,
+      order: index,
+      createdAt: new Date(Date.now() - index * 60 * 1000), // Sequential timestamps
+      updatedAt: new Date()
+    };
+  }
+  
+  // For remaining jobs, use random generation as before
   const title = jobTitles[Math.floor(Math.random() * jobTitles.length)];
   const isArchived = Math.random() < 0.2; // 20% chance of being archived
   
   const randomTags = JOB_TAGS
     .sort(() => 0.5 - Math.random())
     .slice(0, Math.floor(Math.random() * 5) + 2);
-  
+
   return {
     id: generateId(),
     title,
@@ -97,7 +150,7 @@ const generateRandomJob = (index) => {
       currency: 'USD'
     },
     order: index,
-    createdAt: new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000), // Random date within last 90 days
+    createdAt: new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000), // Random dates for non-priority jobs
     updatedAt: new Date()
   };
 };
@@ -116,6 +169,7 @@ const generateRandomCandidate = (jobId, index) => {
     .slice(0, Math.floor(Math.random() * 8) + 3);
   
   return {
+    id: generateId(),
     name,
     email,
     phone: `+1-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`,
@@ -161,12 +215,21 @@ const generateCandidateTimeline = (candidateId, currentStage) => {
   return timeline;
 };
 
-const generateAssessment = (jobId, assessmentTitle) => {
+const generateComprehensiveAssessment = (jobId, jobTitle, index) => {
+  // Use the actual job title for each assessment
+  const assessmentTitle = `${jobTitle} - Technical Assessment`;
+  
+  // Create timestamp with offset to ensure proper ordering (index * 1000ms apart)
+  const baseTime = new Date();
+  const createdAt = new Date(baseTime.getTime() + (index * 1000));
+  const updatedAt = new Date(createdAt.getTime());
+  
+  // Generate 10+ questions across multiple sections
   const sections = [
     {
       id: generateId(),
-      title: 'Technical Skills',
-      description: 'Assess technical knowledge and problem-solving abilities',
+      title: 'Technical Skills & Experience',
+      description: 'Assess technical knowledge and professional background',
       questions: [
         {
           id: generateId(),
@@ -178,20 +241,24 @@ const generateAssessment = (jobId, assessmentTitle) => {
             { id: generateId(), label: 'Python', value: 'python' },
             { id: generateId(), label: 'Java', value: 'java' },
             { id: generateId(), label: 'C#', value: 'csharp' },
+            { id: generateId(), label: 'TypeScript', value: 'typescript' },
             { id: generateId(), label: 'Other', value: 'other' }
           ]
         },
         {
           id: generateId(),
           type: QUESTION_TYPES.MULTI_CHOICE,
-          title: 'Which of the following frameworks have you worked with?',
+          title: 'Which frameworks and technologies have you worked with? (Select all that apply)',
           required: true,
           options: [
             { id: generateId(), label: 'React', value: 'react' },
             { id: generateId(), label: 'Angular', value: 'angular' },
             { id: generateId(), label: 'Vue.js', value: 'vue' },
             { id: generateId(), label: 'Node.js', value: 'nodejs' },
-            { id: generateId(), label: 'Express.js', value: 'express' }
+            { id: generateId(), label: 'Express.js', value: 'express' },
+            { id: generateId(), label: 'Django', value: 'django' },
+            { id: generateId(), label: 'Spring Boot', value: 'spring' },
+            { id: generateId(), label: 'Laravel', value: 'laravel' }
           ]
         },
         {
@@ -200,62 +267,148 @@ const generateAssessment = (jobId, assessmentTitle) => {
           title: 'How many years of professional development experience do you have?',
           required: true,
           validation: { min: 0, max: 50 }
+        },
+        {
+          id: generateId(),
+          type: QUESTION_TYPES.SINGLE_CHOICE,
+          title: 'What is your experience level with cloud platforms?',
+          required: true,
+          options: [
+            { id: generateId(), label: 'Expert - 5+ years', value: 'expert' },
+            { id: generateId(), label: 'Intermediate - 2-5 years', value: 'intermediate' },
+            { id: generateId(), label: 'Beginner - Less than 2 years', value: 'beginner' },
+            { id: generateId(), label: 'No experience', value: 'none' }
+          ]
         }
       ]
     },
     {
       id: generateId(),
-      title: 'Problem Solving',
+      title: 'Problem Solving & Analysis',
       description: 'Evaluate analytical and problem-solving capabilities',
       questions: [
         {
           id: generateId(),
           type: QUESTION_TYPES.LONG_TEXT,
-          title: 'Describe a challenging technical problem you solved recently and your approach to solving it.',
+          title: 'Describe a challenging technical problem you solved recently and your approach to solving it. Include the technologies used and the outcome.',
           required: true,
           validation: { minLength: 100, maxLength: 1000 }
         },
         {
           id: generateId(),
           type: QUESTION_TYPES.SHORT_TEXT,
-          title: 'What is your preferred debugging methodology?',
+          title: 'What is your preferred debugging methodology when facing complex issues?',
+          required: true,
+          validation: { maxLength: 300 }
+        },
+        {
+          id: generateId(),
+          type: QUESTION_TYPES.SINGLE_CHOICE,
+          title: 'When working on a team project, how do you typically approach code reviews?',
+          required: true,
+          options: [
+            { id: generateId(), label: 'Focus on functionality and bugs', value: 'functionality' },
+            { id: generateId(), label: 'Emphasize code quality and standards', value: 'quality' },
+            { id: generateId(), label: 'Balance between functionality and maintainability', value: 'balanced' },
+            { id: generateId(), label: 'Minimal review, trust team members', value: 'minimal' }
+          ]
+        },
+        {
+          id: generateId(),
+          type: QUESTION_TYPES.MULTI_CHOICE,
+          title: 'Which testing approaches do you regularly use? (Select all that apply)',
           required: false,
-          validation: { maxLength: 200 }
+          options: [
+            { id: generateId(), label: 'Unit Testing', value: 'unit' },
+            { id: generateId(), label: 'Integration Testing', value: 'integration' },
+            { id: generateId(), label: 'End-to-End Testing', value: 'e2e' },
+            { id: generateId(), label: 'Test-Driven Development (TDD)', value: 'tdd' },
+            { id: generateId(), label: 'Behavior-Driven Development (BDD)', value: 'bdd' },
+            { id: generateId(), label: 'Manual Testing', value: 'manual' }
+          ]
         }
       ]
     },
     {
       id: generateId(),
-      title: 'Additional Information',
-      description: 'Tell us more about yourself',
+      title: 'Communication & Team Collaboration',
+      description: 'Assess soft skills and team dynamics',
+      questions: [
+        {
+          id: generateId(),
+          type: QUESTION_TYPES.LONG_TEXT,
+          title: 'Describe a situation where you had to explain a complex technical concept to a non-technical stakeholder. How did you approach it?',
+          required: true,
+          validation: { minLength: 80, maxLength: 600 }
+        },
+        {
+          id: generateId(),
+          type: QUESTION_TYPES.SINGLE_CHOICE,
+          title: 'How do you prefer to receive feedback on your work?',
+          required: true,
+          options: [
+            { id: generateId(), label: 'Regular one-on-one meetings', value: 'meetings' },
+            { id: generateId(), label: 'Written feedback via email/slack', value: 'written' },
+            { id: generateId(), label: 'Real-time during code reviews', value: 'realtime' },
+            { id: generateId(), label: 'Formal quarterly reviews', value: 'formal' }
+          ]
+        },
+        {
+          id: generateId(),
+          type: QUESTION_TYPES.SHORT_TEXT,
+          title: 'What motivates you most in your professional work?',
+          required: true,
+          validation: { maxLength: 250 }
+        }
+      ]
+    },
+    {
+      id: generateId(),
+      title: 'Role-Specific & Additional Information',
+      description: 'Position-specific questions and final details',
       questions: [
         {
           id: generateId(),
           type: QUESTION_TYPES.SINGLE_CHOICE,
-          title: 'Are you available for remote work?',
+          title: 'What is your preferred work arrangement?',
           required: true,
           options: [
-            { id: generateId(), label: 'Yes, fully remote', value: 'yes' },
-            { id: generateId(), label: 'Hybrid (remote + office)', value: 'hybrid' },
-            { id: generateId(), label: 'No, office only', value: 'no' }
+            { id: generateId(), label: 'Fully remote', value: 'remote' },
+            { id: generateId(), label: 'Hybrid (2-3 days in office)', value: 'hybrid' },
+            { id: generateId(), label: 'Mostly in-office with occasional remote', value: 'office-flexible' },
+            { id: generateId(), label: 'Fully in-office', value: 'office' }
           ]
         },
         {
           id: generateId(),
           type: QUESTION_TYPES.LONG_TEXT,
-          title: 'Why are you interested in this position?',
+          title: 'Why are you interested in this specific position and our company? What attracts you to this opportunity?',
           required: true,
-          validation: { minLength: 50, maxLength: 500 },
-          conditionalLogic: {
-            dependsOn: 'availability', // This would need to be properly linked
-            condition: 'equals',
-            value: 'yes'
-          }
+          validation: { minLength: 100, maxLength: 800 }
+        },
+        {
+          id: generateId(),
+          type: QUESTION_TYPES.NUMERIC,
+          title: 'What is your expected salary range (in USD thousands)? Please enter the minimum you would accept.',
+          required: false,
+          validation: { min: 30, max: 500 }
+        },
+        {
+          id: generateId(),
+          type: QUESTION_TYPES.SINGLE_CHOICE,
+          title: 'How soon would you be available to start if selected?',
+          required: true,
+          options: [
+            { id: generateId(), label: 'Immediately', value: 'immediate' },
+            { id: generateId(), label: 'Within 2 weeks', value: '2weeks' },
+            { id: generateId(), label: '1 month notice period', value: '1month' },
+            { id: generateId(), label: '2 months or more', value: '2months' }
+          ]
         },
         {
           id: generateId(),
           type: QUESTION_TYPES.FILE_UPLOAD,
-          title: 'Please upload your portfolio or code samples (optional)',
+          title: 'Please upload your portfolio, code samples, or any relevant work examples (optional)',
           required: false
         }
       ]
@@ -265,37 +418,50 @@ const generateAssessment = (jobId, assessmentTitle) => {
   return {
     id: generateId(),
     jobId,
-    title: assessmentTitle,
-    description: 'Complete this assessment to help us evaluate your qualifications for this position.',
-    timeLimit: 60, // minutes
+    title: assessmentTitle, // Use the specific job title
+    description: `Complete this comprehensive assessment to help us evaluate your qualifications for the ${jobTitle} position. This assessment covers technical skills, problem-solving abilities, and team collaboration.`,
+    timeLimit: 90, // minutes
     sections,
     settings: {
       allowRetake: false,
-      randomizeQuestions: false,
+      randomizeQuestions: true,
       showResults: false,
-      passingScore: 70
+      passingScore: 75,
+      questionsPerSection: sections.map(s => s.questions.length),
+      totalQuestions: sections.reduce((total, section) => total + section.questions.length, 0)
     },
-    createdAt: new Date(),
-    updatedAt: new Date()
+    createdAt: createdAt,
+    updatedAt: updatedAt
   };
 };
 
 export const seedDatabase = async () => {
   try {
-    // Generate jobs
-    console.log('Generating jobs...');
-    const jobs = Array.from({ length: 25 }, (_, index) => generateRandomJob(index));
+    
+    // Clear existing data first (with proper transaction handling)
+    await db.transaction('rw', db.jobs, db.candidates, db.candidateTimeline, db.candidateNotes, db.assessments, db.assessmentResponses, async () => {
+      await db.jobs.clear();
+      await db.candidates.clear();
+      await db.candidateTimeline.clear();
+      await db.candidateNotes.clear();
+      await db.assessments.clear();
+      await db.assessmentResponses.clear();
+    });
+    
+    // Generate and insert 50 jobs (mixed active/archived)
+    const jobs = Array.from({ length: 50 }, (_, index) => generateRandomJob(index));
     await db.jobs.bulkAdd(jobs);
     
-    // Generate candidates (40 per job on average, totaling 1000)
-    console.log('Generating candidates...');
+    // Generate 1,000 candidates with guaranteed candidates for first 3 jobs
     const allCandidates = [];
     const allTimeline = [];
     
-    for (const job of jobs) {
-      const candidateCount = Math.floor(Math.random() * 30) + 25; // 25-55 candidates per job
+    // First, ensure each of the first 3 jobs gets at least 5-10 candidates
+    for (let jobIndex = 0; jobIndex < 3; jobIndex++) {
+      const job = jobs[jobIndex];
+      const candidatesForThisJob = 5 + Math.floor(Math.random() * 6); // 5-10 candidates
       
-      for (let i = 0; i < candidateCount; i++) {
+      for (let c = 0; c < candidatesForThisJob; c++) {
         const candidate = generateRandomCandidate(job.id, allCandidates.length);
         allCandidates.push(candidate);
         
@@ -305,12 +471,14 @@ export const seedDatabase = async () => {
       }
     }
     
-    // Ensure we have at least 1000 candidates
-    while (allCandidates.length < 1000) {
+    // Then generate remaining candidates for all jobs (including the first 3)
+    const remainingCandidates = 1000 - allCandidates.length;
+    for (let i = 0; i < remainingCandidates; i++) {
       const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
       const candidate = generateRandomCandidate(randomJob.id, allCandidates.length);
       allCandidates.push(candidate);
       
+      // Generate timeline for this candidate
       const timeline = generateCandidateTimeline(candidate.id, candidate.stage);
       allTimeline.push(...timeline);
     }
@@ -318,27 +486,20 @@ export const seedDatabase = async () => {
     await db.candidates.bulkAdd(allCandidates);
     await db.candidateTimeline.bulkAdd(allTimeline);
     
-    // Generate assessments (3 per job type, focusing on first few jobs)
-    console.log('Generating assessments...');
-    const assessments = [];
+    // Select first 3 jobs and create comprehensive assessments for them
+    const selectedJobs = jobs.slice(0, 3); // Take first 3 jobs instead of random selection
     
-    // Create 3 comprehensive assessments for the first 3 jobs
+    const assessments = [];
     for (let i = 0; i < 3; i++) {
-      const job = jobs[i];
-      const assessment = generateAssessment(job.id, `${job.title} Assessment`);
+      const job = selectedJobs[i];
+      const assessment = generateComprehensiveAssessment(job.id, job.title, i);
       assessments.push(assessment);
     }
     
     await db.assessments.bulkAdd(assessments);
-    
-    console.log(`Seeded database with:
-      - ${jobs.length} jobs
-      - ${allCandidates.length} candidates  
-      - ${allTimeline.length} timeline entries
-      - ${assessments.length} assessments`);
-    
   } catch (error) {
-    console.error('Error seeding database:', error);
     throw error;
   }
 };
+    
+    

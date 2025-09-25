@@ -2,22 +2,31 @@ import { http } from 'msw';
 import { setupWorker } from 'msw/browser';
 import { db } from '../db/index.js';
 import { isValidStageTransition } from '../utils/helpers.js';
-import { simulateNetworkDelay, simulateNetworkError, buildQueryString, paginateArray } from '../utils/helpers.js';
+import { simulateNetworkDelay, simulateKanbanDelay, simulateNetworkError, buildQueryString, paginateArray } from '../utils/helpers.js';
 
 // Configurable MSW simulation settings (use Vite env variable VITE_MSW_ERROR_RATE)
 const MSW_ERROR_RATE = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_MSW_ERROR_RATE
   ? Number(import.meta.env.VITE_MSW_ERROR_RATE)
-  : 0.08; // default 8%
+  : 0; // Temporarily disabled error simulation (was 0.08 / 8%)
 
-// Helper function to simulate API response with delay and potential errors
+// Simplified API response - no artificial delays, just error simulation if needed
 const createApiResponse = async (handler) => {
-  await simulateNetworkDelay();
-  
+  // Skip delays entirely for better development experience
   if (simulateNetworkError(MSW_ERROR_RATE)) {
     throw new Error('Simulated network error');
   }
   
-  return handler();
+  return await handler();
+};
+
+// Kanban operations - same as regular but dedicated for clarity
+const createKanbanApiResponse = async (handler) => {
+  // No delays for Kanban operations - immediate response
+  if (simulateNetworkError(MSW_ERROR_RATE)) {
+    throw new Error('Simulated network error');
+  }
+  
+  return await handler();
 };
 
 // Jobs API handlers
@@ -33,8 +42,8 @@ const jobsHandlers = [
         const tags = tagsParam ? tagsParam.split(',').filter(Boolean) : [];
         const page = parseInt(url.searchParams.get('page')) || 1;
         const pageSize = parseInt(url.searchParams.get('pageSize')) || 10;
-        const sort = url.searchParams.get('sort') || 'createdAt';
-        const order = url.searchParams.get('order') || 'desc';
+        const sort = url.searchParams.get('sort') || 'order'; // Use order field instead of createdAt for more reliable sorting
+        const order = url.searchParams.get('order') || 'asc';  // Use ascending order so first jobs (order: 0, 1, 2) appear first
 
         let jobs = await db.jobs.orderBy(sort).toArray();
         
@@ -97,21 +106,13 @@ const jobsHandlers = [
   http.get('/api/jobs/:id', async ({ params }) => {
     try {
       const result = await createApiResponse(async () => {
-        const id = parseParam(params.id);
-        let job;
-        if (typeof id === 'number') {
-          job = await db.jobs.get(id);
-        } else {
-          job = await db.jobs.where('id').equals(id).first();
-        }
-
+        const id = params.id;
+        const job = await db.jobs.where('id').equals(id).first();
         if (!job) {
           throw new Error('Job not found');
         }
-
         return { job };
       });
-
       return new Response(JSON.stringify(result), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -127,24 +128,32 @@ const jobsHandlers = [
   // POST /api/jobs - Create new job
   http.post('/api/jobs', async ({ request }) => {
     try {
-      const result = await createApiResponse(async () => {
-        const jobData = await request.json();
-        
+      const jobData = await request.json();
+      
+      // Add required fields if missing
+      if (!jobData.createdAt) {
+        jobData.createdAt = new Date().toISOString();
+      }
+      if (!jobData.updatedAt) {
+        jobData.updatedAt = new Date().toISOString();
+      }
+      if (typeof jobData.order === 'undefined') {
         // Get the highest order value and increment
         const maxOrder = await db.jobs.orderBy('order').reverse().first();
         jobData.order = maxOrder ? maxOrder.order + 1 : 0;
-        
-        const id = await db.jobs.add(jobData);
-        const job = await db.jobs.get(id);
-        return { job };
-      });
+      }
+      
+      const id = await db.jobs.add(jobData);
+      const job = await db.jobs.get(id);
+      
+      const result = { job };
 
       return new Response(JSON.stringify(result), {
         status: 201,
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (error) {
-      return new Response(JSON.stringify({ error: 'Failed to create job' }), {
+      return new Response(JSON.stringify({ error: 'Failed to create job', details: error.message }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -156,20 +165,13 @@ const jobsHandlers = [
     try {
       const result = await createApiResponse(async () => {
         const updates = await request.json();
-        const id = parseParam(params.id);
-        if (typeof id === 'number') {
-          await db.jobs.update(id, updates);
-          const job = await db.jobs.get(id);
-          return { job };
-        }
-
+        const id = params.id;
         const existing = await db.jobs.where('id').equals(id).first();
         if (!existing) throw new Error('Job not found');
         await db.jobs.update(existing.id, updates);
         const job = await db.jobs.get(existing.id);
         return { job };
       });
-
       return new Response(JSON.stringify(result), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -186,17 +188,11 @@ const jobsHandlers = [
   http.delete('/api/jobs/:id', async ({ params }) => {
     try {
       const result = await createApiResponse(async () => {
-        const id = parseParam(params.id);
-        if (typeof id === 'number') {
-          await db.jobs.delete(id);
-        } else {
-          const existing = await db.jobs.where('id').equals(id).first();
-          if (existing) await db.jobs.delete(existing.id);
-        }
-
+        const id = params.id;
+        const existing = await db.jobs.where('id').equals(id).first();
+        if (existing) await db.jobs.delete(existing.id);
         return { success: true };
       });
-
       return new Response(JSON.stringify(result), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -223,27 +219,21 @@ const jobsHandlers = [
         if (!jobToMove) {
           throw new Error('Job not found');
         }
-
         // Update orders
         if (fromOrder < toOrder) {
-          // Moving down - decrement jobs between fromOrder and toOrder
           for (const job of jobs) {
             if (job.order > fromOrder && job.order <= toOrder) {
               await db.jobs.update(job.id, { order: job.order - 1 });
             }
           }
         } else {
-          // Moving up - increment jobs between toOrder and fromOrder
           for (const job of jobs) {
             if (job.order >= toOrder && job.order < fromOrder) {
               await db.jobs.update(job.id, { order: job.order + 1 });
             }
           }
         }
-        
-        // Update the moved job's order
-  await db.jobs.update(jobToMove.id, { order: toOrder });
-        
+        await db.jobs.update(jobToMove.id, { order: toOrder });
         return { success: true };
       });
 
@@ -326,26 +316,22 @@ const candidatesHandlers = [
     try {
       const result = await createApiResponse(async () => {
         const id = params.id;
-        console.log('Looking for candidate with ID:', id);
         
         let candidate;
         
         // Try numeric ID first
         if (!isNaN(id)) {
           candidate = await db.candidates.get(Number(id));
-          console.log('Tried numeric lookup, found:', candidate);
         }
         
         // If not found, try string ID lookup
         if (!candidate) {
           candidate = await db.candidates.where('id').equals(id).first();
-          console.log('Tried string lookup, found:', candidate);
         }
         
         // If still not found, try string comparison
         if (!candidate) {
           candidate = await db.candidates.where('id').equals(String(id)).first();
-          console.log('Tried string conversion lookup, found:', candidate);
         }
         
         if (!candidate) {
@@ -360,7 +346,6 @@ const candidatesHandlers = [
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (error) {
-      console.error('Error finding candidate:', error);
       return new Response(JSON.stringify({ error: 'Candidate not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
@@ -371,71 +356,62 @@ const candidatesHandlers = [
   // PATCH /api/candidates/:id - Update candidate
   http.patch('/api/candidates/:id', async ({ request, params }) => {
     try {
-      // Add a small delay for realism but skip error simulation for critical operations
-      await simulateNetworkDelay();
-      
-      const updates = await request.json();
-      const id = params.id;
-      
-      // Try to find candidate by both string and numeric ID
-      let oldCandidate;
-      
-      // First try as numeric ID
-      if (!isNaN(id)) {
-        oldCandidate = await db.candidates.get(Number(id));
-      }
-      
-      // If not found, try as string ID
-      if (!oldCandidate) {
-        oldCandidate = await db.candidates.where('id').equals(id).first();
-      }
-      
-      // If still not found, try string conversion
-      if (!oldCandidate) {
-        oldCandidate = await db.candidates.where('id').equals(String(id)).first();
-      }
+      const result = await createKanbanApiResponse(async () => {
+        const updates = await request.json();
+        const id = params.id;
+        
+        // Try to find candidate by both string and numeric ID
+        let oldCandidate;
+        
+        // First try as numeric ID
+        if (!isNaN(id)) {
+          oldCandidate = await db.candidates.get(Number(id));
+        }
+        
+        // If not found, try as string ID
+        if (!oldCandidate) {
+          oldCandidate = await db.candidates.where('id').equals(id).first();
+        }
+        
+        // If still not found, try string conversion
+        if (!oldCandidate) {
+          oldCandidate = await db.candidates.where('id').equals(String(id)).first();
+        }
 
-      if (!oldCandidate) {
-        console.error('Candidate not found with ID:', id, 'Type:', typeof id);
-        return new Response(JSON.stringify({ error: 'Candidate not found' }), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
+        if (!oldCandidate) {
+          throw new Error('Candidate not found');
+        }
 
-      // If stage changed, validate the transition
-      if (updates.stage && updates.stage !== oldCandidate.stage) {
-        if (!isValidStageTransition(oldCandidate.stage, updates.stage)) {
-          return new Response(JSON.stringify({ 
-            error: `Invalid stage transition from ${oldCandidate.stage} to ${updates.stage}` 
-          }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
+        // If stage changed, validate the transition
+        if (updates.stage && updates.stage !== oldCandidate.stage) {
+          if (!isValidStageTransition(oldCandidate.stage, updates.stage)) {
+            throw new Error(`Invalid stage transition from ${oldCandidate.stage} to ${updates.stage}`);
+          }
+        }
+
+        // Update using the actual database ID (which is numeric)
+        await db.candidates.update(oldCandidate.id, updates);
+        const candidate = await db.candidates.get(oldCandidate.id);
+        
+        // If stage changed, add timeline entry
+        if (updates.stage && updates.stage !== oldCandidate.stage) {
+          await db.candidateTimeline.add({
+            candidateId: candidate.id,
+            stage: updates.stage,
+            changedBy: updates.changedBy || 'user',
+            notes: `Stage changed from ${oldCandidate.stage} to ${updates.stage}`
           });
         }
-      }
-
-      // Update using the actual database ID (which is numeric)
-      await db.candidates.update(oldCandidate.id, updates);
-      const candidate = await db.candidates.get(oldCandidate.id);
+        
+        return { candidate };
+      });
       
-      // If stage changed, add timeline entry
-      if (updates.stage && updates.stage !== oldCandidate.stage) {
-        await db.candidateTimeline.add({
-          candidateId: candidate.id,
-          stage: updates.stage,
-          changedBy: updates.changedBy || 'user',
-          notes: `Stage changed from ${oldCandidate.stage} to ${updates.stage}`
-        });
-      }
-      
-      return new Response(JSON.stringify({ candidate }), {
+      return new Response(JSON.stringify(result), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (error) {
-      console.error('Error updating candidate:', error);
-      return new Response(JSON.stringify({ error: 'Failed to update candidate' }), {
+      return new Response(JSON.stringify({ error: error.message || 'Failed to update candidate' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -650,15 +626,13 @@ const assessmentsHandlers = [
   http.get('/api/assessments/:jobId', async ({ params }) => {
     try {
       const result = await createApiResponse(async () => {
-        const jobId = Number(params.jobId);
+        const jobId = params.jobId;
         const assessment = await db.assessments
           .where('jobId')
           .equals(jobId)
           .first();
-        
         return { assessment };
       });
-
       return new Response(JSON.stringify(result), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -676,14 +650,12 @@ const assessmentsHandlers = [
     try {
       const result = await createApiResponse(async () => {
         const assessmentData = await request.json();
-        assessmentData.jobId = Number(params.jobId);
-        
+        assessmentData.jobId = params.jobId;
         // Check if assessment exists
         const existing = await db.assessments
           .where('jobId')
           .equals(assessmentData.jobId)
           .first();
-        
         let assessment;
         if (existing) {
           await db.assessments.update(existing.id, assessmentData);
@@ -692,10 +664,8 @@ const assessmentsHandlers = [
           const id = await db.assessments.add(assessmentData);
           assessment = await db.assessments.get(id);
         }
-        
         return { assessment };
       });
-
       return new Response(JSON.stringify(result), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -724,7 +694,6 @@ export const initializeMockApi = async () => {
     await worker.start({
       onUnhandledRequest: 'warn'
     });
-    console.log('Mock API initialized');
   }
 };
 

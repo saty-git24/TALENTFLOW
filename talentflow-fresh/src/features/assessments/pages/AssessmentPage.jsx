@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Eye, Save, Play } from 'lucide-react';
+import { Wrench } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.jsx';
 import { AssessmentBuilder } from '../components/AssessmentBuilder.jsx';
 import { AssessmentPreview } from '../components/AssessmentPreview.jsx';
@@ -145,6 +146,7 @@ const AssessmentPage = () => {
               size="sm"
               onClick={handleBackToBuilder}
             >
+              <Wrench className="w-4 h-4 mr-1" />
               Builder
             </Button>
             <Button

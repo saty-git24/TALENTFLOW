@@ -13,6 +13,7 @@ export const useAssessmentsStore = create(
         // State
         currentAssessment: null,
         savedAssessments: [],
+        deletedAssessmentIds: [], // Track deleted assessment IDs to prevent reloading from DB
         assessmentResponses: {},
         builderState: {
           id: null,
@@ -601,6 +602,16 @@ export const useAssessmentsStore = create(
           return get().savedAssessments;
         },
 
+        // Set saved assessments (useful for loading from external sources)
+        setSavedAssessments: (assessments) => {
+          set({ savedAssessments: assessments });
+        },
+
+        // Get deleted assessment IDs
+        getDeletedAssessmentIds: () => {
+          return get().deletedAssessmentIds;
+        },
+
         // Get assessment by ID
         getAssessmentById: (assessmentId) => {
           return get().savedAssessments.find(assessment => assessment.id === assessmentId);
@@ -614,7 +625,8 @@ export const useAssessmentsStore = create(
         // Delete assessment
         deleteAssessment: (assessmentId) => {
           set((state) => ({
-            savedAssessments: state.savedAssessments.filter(assessment => assessment.id !== assessmentId)
+            savedAssessments: state.savedAssessments.filter(assessment => assessment.id !== assessmentId),
+            deletedAssessmentIds: [...state.deletedAssessmentIds, assessmentId]
           }));
         },
 
@@ -699,6 +711,7 @@ export const useAssessmentsStore = create(
         partialize: (state) => ({
           builderState: state.builderState,
           savedAssessments: state.savedAssessments,
+          deletedAssessmentIds: state.deletedAssessmentIds,
           assessmentResponses: state.assessmentResponses
         })
       }

@@ -46,19 +46,21 @@ export const KanbanColumn = ({
 
       {/* Candidates List */}
       <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
-        {candidates.map((candidate, index) => (
-          <CandidateCard
-            key={candidate.id}
-            candidate={candidate}
-            job={jobs[candidate.jobId]}
-            onDelete={onDelete}
-            onStageChange={onStageChange}
-            compact={true}
-            draggable={true}
-            showJobTitle={true}
-            index={index}
-          />
-        ))}
+        {[...candidates]
+          .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+          .map((candidate, index) => (
+            <CandidateCard
+              key={candidate.id}
+              candidate={candidate}
+              job={jobs[candidate.jobId]}
+              onDelete={onDelete}
+              onStageChange={onStageChange}
+              compact={true}
+              draggable={true}
+              showJobTitle={true}
+              index={index}
+            />
+          ))}
         
         {candidates.length === 0 && !loading && (
           <div className="text-center py-8 text-gray-400">

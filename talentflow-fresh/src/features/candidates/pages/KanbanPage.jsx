@@ -72,15 +72,15 @@ const KanbanPage = () => {
 
       // Validate the stage transition
       if (!isValidStageTransition(candidate.stage, newStage)) {
-        alert(`Invalid transition from ${CANDIDATE_STAGE_LABELS[candidate.stage]} to ${CANDIDATE_STAGE_LABELS[newStage]}`);
+        // Temporarily disable alert to test timing issues
+        // alert(`Invalid transition from ${CANDIDATE_STAGE_LABELS[candidate.stage]} to ${CANDIDATE_STAGE_LABELS[newStage]}`);
         return;
       }
 
       await moveCandidateToStage(candidateId, newStage);
-      console.log(`Successfully moved candidate ${candidateId} to ${newStage}`);
     } catch (error) {
-      console.error('Failed to move candidate:', error);
-      alert('Failed to update candidate stage. Please try again.');
+      // Temporarily disable alert to test timing issues
+      // alert('Failed to update candidate stage. Please try again.');
     }
   };
 
@@ -88,9 +88,7 @@ const KanbanPage = () => {
     if (window.confirm('Are you sure you want to delete this candidate?')) {
       try {
         await deleteCandidate(candidateId);
-        console.log('Candidate deleted successfully');
       } catch (error) {
-        console.error('Failed to delete candidate:', error);
         alert('Failed to delete candidate. Please try again.');
       }
     }

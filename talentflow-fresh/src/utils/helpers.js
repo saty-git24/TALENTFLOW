@@ -162,9 +162,21 @@ export const reorderArray = (array, startIndex, endIndex) => {
   return result;
 };
 
-export const simulateNetworkDelay = (min = 200, max = 1200) => {
-  const delay = Math.random() * (max - min) + min;
-  return new Promise(resolve => setTimeout(resolve, delay));
+// Simplified network delay - no promises, just immediate execution with optional setTimeout
+export const simulateNetworkDelay = (callback, min = 50, max = 200) => {
+  // For development, execute immediately most of the time
+  if (Math.random() < 0.9) { // 90% immediate execution
+    callback();
+  } else {
+    // 10% chance of small delay for testing
+    const delay = Math.random() * (max - min) + min;
+    setTimeout(callback, delay);
+  }
+};
+
+export const simulateKanbanDelay = (callback) => {
+  // Kanban operations should always be immediate for best UX
+  callback();
 };
 
 export const simulateNetworkError = (errorRate = 0.1) => {

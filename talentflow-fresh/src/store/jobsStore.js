@@ -30,25 +30,19 @@ export const useJobsStore = create(
         jobs: [job, ...state.jobs]
       })),
       
-      updateJob: (id, updates) => set((state) => {
-        const idNum = Number(id);
-        return {
-          jobs: state.jobs.map(job => 
-            job.id === idNum ? { ...job, ...updates } : job
-          ),
-          currentJob: state.currentJob?.id === idNum 
-            ? { ...state.currentJob, ...updates }
-            : state.currentJob
-        };
-      }),
-      
-      removeJob: (id) => set((state) => {
-        const idNum = Number(id);
-        return {
-          jobs: state.jobs.filter(job => job.id !== idNum),
-          currentJob: state.currentJob?.id === idNum ? null : state.currentJob
-        };
-      }),
+      updateJob: (id, updates) => set((state) => ({
+        jobs: state.jobs.map(job => 
+          job.id === id ? { ...job, ...updates } : job
+        ),
+        currentJob: state.currentJob?.id === id 
+          ? { ...state.currentJob, ...updates }
+          : state.currentJob
+      })),
+
+      removeJob: (id) => set((state) => ({
+        jobs: state.jobs.filter(job => job.id !== id),
+        currentJob: state.currentJob?.id === id ? null : state.currentJob
+      })),
       
       reorderJobs: (jobs) => set({ jobs }),
       
