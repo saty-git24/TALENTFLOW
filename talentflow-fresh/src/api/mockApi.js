@@ -37,6 +37,7 @@ const createKanbanApiResponse = async (handler) => {
 const jobsHandlers = [
   // GET /api/jobs - List jobs with pagination and filtering
   http.get('/api/jobs', async ({ request }) => {
+    console.log('[MSW] Intercepted GET /api/jobs', request.url);
     try {
       const result = await createApiResponse(async () => {
         const url = new URL(request.url);
@@ -94,6 +95,64 @@ const jobsHandlers = [
         };
       });
 
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({ error: 'Failed to fetch jobs' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }),
+
+  // GET /jobs - List jobs (no /api prefix, for frontend requests to /jobs)
+  http.get('/jobs', async ({ request }) => {
+    console.log('[MSW] Intercepted GET /jobs', request.url);
+    // Reuse the same logic as /api/jobs
+    try {
+      const result = await createApiResponse(async () => {
+        const url = new URL(request.url);
+        const search = url.searchParams.get('search') || '';
+        const status = url.searchParams.get('status') || '';
+        const tagsParam = url.searchParams.get('tags') || '';
+        const tags = tagsParam ? tagsParam.split(',').filter(Boolean) : [];
+        const page = parseInt(url.searchParams.get('page')) || 1;
+        const pageSize = parseInt(url.searchParams.get('pageSize')) || 10;
+        const sort = url.searchParams.get('sort') || 'order';
+        const order = url.searchParams.get('order') || 'asc';
+
+        let jobs = await db.jobs.orderBy(sort).toArray();
+        if (order === 'desc') jobs.reverse();
+        if (search) {
+          jobs = jobs.filter(job =>
+            job.title.toLowerCase().includes(search.toLowerCase()) ||
+            job.description?.toLowerCase().includes(search.toLowerCase()) ||
+            job.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
+          );
+        }
+        if (status) jobs = jobs.filter(job => job.status === status);
+        if (tags.length > 0) {
+          jobs = jobs.filter(job => {
+            if (!job.tags || !Array.isArray(job.tags)) return false;
+            return tags.some(tag =>
+              job.tags.some(jobTag => jobTag.toLowerCase() === tag.toLowerCase())
+            );
+          });
+        }
+        const result = paginateArray(jobs, page, pageSize);
+        return {
+          jobs: result.items,
+          pagination: {
+            currentPage: result.currentPage,
+            totalPages: result.totalPages,
+            totalItems: result.totalItems,
+            hasNextPage: result.hasNextPage,
+            hasPrevPage: result.hasPrevPage
+          }
+        };
+      });
       return new Response(JSON.stringify(result), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -258,6 +317,7 @@ const jobsHandlers = [
 const candidatesHandlers = [
   // GET /api/candidates - List candidates
   http.get('/api/candidates', async ({ request }) => {
+    console.log('[MSW] Intercepted GET /api/candidates', request.url);
     try {
       const result = await createApiResponse(async () => {
         const url = new URL(request.url);

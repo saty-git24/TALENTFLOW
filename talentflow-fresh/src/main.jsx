@@ -76,7 +76,10 @@ async function startApp() {
 }
 
 async function enableMocksAndStartApp() {
+  console.log('[DEBUG] App starting at', window.location.href);
+  console.log('[DEBUG] NODE_ENV:', import.meta.env.MODE);
   if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+    console.log('[DEBUG] Service workers supported, attempting registration...');
     try {
       // Register the service worker at the root scope
       const registration = await navigator.serviceWorker.register("/mockServiceWorker.js", {
@@ -91,18 +94,28 @@ async function enableMocksAndStartApp() {
   }
 
   // Start MSW and wait for it to be ready
-  const { worker } = await import('./api/mockApi.js')
-  await worker.start({
-    serviceWorker: {
-      url: "/mockServiceWorker.js",
-      options: { scope: "/" },
-    },
-    onUnhandledRequest: "bypass",
-  });
+  try {
+    const { worker } = await import('./api/mockApi.js')
+    await worker.start({
+      serviceWorker: {
+        url: "/mockServiceWorker.js",
+        options: { scope: "/" },
+      },
+      onUnhandledRequest: "bypass",
+    });
+    console.log('[MSW] worker.start() called');
+  } catch (err) {
+    console.error('[MSW] worker.start() failed:', err);
+  }
 
   // Initialize IndexedDB and seed data
-  const { initializeDatabase } = await import('./db/index.js')
-  await initializeDatabase();
+  try {
+    const { initializeDatabase } = await import('./db/index.js')
+    await initializeDatabase();
+    console.log('[DEBUG] Database initialized');
+  } catch (err) {
+    console.error('[DEBUG] Database initialization failed:', err);
+  }
 }
 
 startApp()
