@@ -42,7 +42,7 @@ async function enableMocking() {
 
 async function startApp() {
   try {
-    await enableMocking()
+    await enableMocksAndStartApp()
     
     // Initialize database
     const { initializeDatabase } = await import('./db/index.js')
@@ -73,6 +73,36 @@ async function startApp() {
       </div>
     )
   }
+}
+
+async function enableMocksAndStartApp() {
+  if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+    try {
+      // Register the service worker at the root scope
+      const registration = await navigator.serviceWorker.register("/mockServiceWorker.js", {
+        scope: "/",
+      });
+      console.log("[MSW] Service worker registered:", registration);
+    } catch (error) {
+      console.error("[MSW] Service worker registration failed:", error);
+    }
+  } else {
+    console.warn("[MSW] Service workers are not supported in this environment.");
+  }
+
+  // Start MSW and wait for it to be ready
+  const { worker } = await import('./api/mockApi.js')
+  await worker.start({
+    serviceWorker: {
+      url: "/mockServiceWorker.js",
+      options: { scope: "/" },
+    },
+    onUnhandledRequest: "bypass",
+  });
+
+  // Initialize IndexedDB and seed data
+  const { initializeDatabase } = await import('./db/index.js')
+  await initializeDatabase();
 }
 
 startApp()
