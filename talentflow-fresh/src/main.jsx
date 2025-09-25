@@ -19,16 +19,15 @@ import './styles/globals.css'
 
 // Initialize MSW and database
 async function enableMocking() {
-  if (import.meta.env.DEV) {
-    try {
-      const { worker } = await import('./api/mockApi.js')
-      await worker.start({
-        onUnhandledRequest: 'bypass',
-      })
-      console.log('MSW worker started successfully')
-    } catch (error) {
-      console.error('Failed to start MSW worker:', error)
-    }
+  // Always enable MSW, even in production
+  try {
+    const { worker } = await import('./api/mockApi.js')
+    await worker.start({
+      onUnhandledRequest: 'bypass',
+    })
+    console.log('MSW worker started successfully')
+  } catch (error) {
+    console.error('Failed to start MSW worker:', error)
   }
 }
 
