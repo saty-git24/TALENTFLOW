@@ -19,13 +19,22 @@ import './styles/globals.css'
 
 // Initialize MSW and database
 async function enableMocking() {
-  // Always enable MSW, even in production
+  // Always enable MSW, even in production, and force root scope
   try {
     const { worker } = await import('./api/mockApi.js')
     await worker.start({
+      serviceWorker: {
+        url: '/mockServiceWorker.js',
+        options: { scope: '/' }
+      },
       onUnhandledRequest: 'bypass',
     })
-    console.log('MSW worker started successfully')
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(
+        () => console.log('MSW worker registered and ready'),
+        (err) => console.error('MSW worker registration failed:', err)
+      )
+    }
   } catch (error) {
     console.error('Failed to start MSW worker:', error)
   }
