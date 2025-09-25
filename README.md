@@ -1,11 +1,11 @@
-# 🌟 TalentFlow
+#  TalentFlow
 
 Welcome to **TalentFlow** — a modern, visually engaging candidate and job management platform built for efficient hiring teams!  
 Easily manage job postings, track applicants with a Kanban board, and assess candidates in a slick, single-page app.
 
 ---
 
-## 🗂️ Project Structure
+##  Project Structure
 
 ```
 talentflow-fresh/
@@ -26,49 +26,49 @@ talentflow-fresh/
 
 ---
 
-## 🚀 Tech Stack
+##  Tech Stack
 
 - **Frontend:**  
-  - ⚛️ React (SPA)
-  - ⚡ Vite (dev server/build)
-  - 🧭 React Router (routing)
-  - 🧩 React DnD (drag & drop)
-  - 💾 Dexie.js (IndexedDB in-browser DB)
-  - 🧪 MSW (Mock Service Worker for API mocks)
-  - 🎨 TailwindCSS (or custom styles)
-  - 🧹 ESLint (code linting)
+  -  React (SPA)
+  -  Vite (dev server/build)
+  -  React Router (routing)
+  -  React DnD (drag & drop)
+  -  Dexie.js (IndexedDB in-browser DB)
+  -  MSW (Mock Service Worker for API mocks)
+  -  TailwindCSS (or custom styles)
+  -  ESLint (code linting)
 - **Persistence:**  
-  - 🗄️ IndexedDB (via Dexie.js)
+  -  IndexedDB (via Dexie.js)
 - **DevTools:**  
-  - 🔥 Vite, ESLint
+  -  Vite, ESLint
 
 ---
 
-## ✨ Features
+##  Features
 
-- 📋 **Kanban-Style Candidate Tracking:**  
+-  **Kanban-Style Candidate Tracking:**  
   Drag-and-drop to move candidates through hiring stages.
-- 📝 **Job & Candidate Data Management:**  
+-  **Job & Candidate Data Management:**  
   Add/edit jobs, candidates, assessments, & responses.
-- 💾 **Import/Export:**  
+-  **Import/Export:**  
   Save or load your local data, reset with one click.
-- 🧑‍💻 **Dynamic Assessments:**  
+-  **Dynamic Assessments:**  
   Multi-choice, long/short text, and more for custom candidate forms.
-- 👤 **Profile & Settings:**  
+-  **Profile & Settings:**  
   Manage your info, notifications, appearance.
-- ⚙️ **Mock API & DB:**  
+-  **Mock API & DB:**  
   Everything works offline—perfect for demos & rapid iteration!
 
 ---
 
-## 🏁 Getting Started
+##  Getting Started
 
-### 📦 Prerequisites
+###  Prerequisites
 
 - Node.js (v16+ recommended)
 - npm or yarn
 
-### ⚡ Quickstart
+###  Quickstart
 
 1. **Clone the repository**
    ```bash
@@ -89,11 +89,11 @@ talentflow-fresh/
    # or
    yarn dev
    ```
-   Then visit [http://localhost:3000](http://localhost:3000) 🚀
+   Then visit [http://localhost:3000](http://localhost:3000) 
 
 ---
 
-## 🕹 Usage
+##  Usage
 
 - Create/manage job postings
 - Track candidates on a slick Kanban board
@@ -103,19 +103,7 @@ talentflow-fresh/
 
 ---
 
-## 🤝 Contributing
-
-We love contributions!  
-Fork, branch, code, and PR away.  
-For big changes, open an issue to chat first.
-
-1. Fork this repo
-2. Make your changes in a branch (`git checkout -b cool-feature`)
-3. Commit & push
-4. Open a Pull Request!
-
----
 
 
 
-> **TalentFlow** — Find talent, fast and fun! 🎉
+> **TalentFlow** — Find talent, fast and fun! 
