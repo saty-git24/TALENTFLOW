@@ -32,6 +32,7 @@ export const useJobs = (initialFilters = {}) => {
     };
 
     setLoading(true);
+    clearError(); // Clear error at the start of fetch
     try {
       const data = await jobsApi.getJobs(params);
       setJobs(data.jobs);
@@ -47,7 +48,7 @@ export const useJobs = (initialFilters = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [filters, pagination.currentPage, pagination.pageSize, setJobs, setPagination, setError, setLoading, initialLoad]);
+  }, [filters, pagination.currentPage, pagination.pageSize, setJobs, setPagination, setError, setLoading, clearError, initialLoad]);
 
   // Create new job
   const createJob = useCallback(async (jobData) => {

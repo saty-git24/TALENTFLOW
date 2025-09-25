@@ -122,8 +122,8 @@ const KanbanPage = () => {
         </div>
       </div>
 
-      {/* Error message */}
-      {error && (
+      {/* Error message: only show if error and no candidates loaded */}
+      {error && totalCandidates === 0 && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-center justify-between">
             <p className="text-red-800">{error}</p>

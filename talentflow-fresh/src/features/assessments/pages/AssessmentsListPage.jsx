@@ -17,48 +17,44 @@ const AssessmentsListPage = () => {
   const { getAllAssessments, deleteAssessment, setSavedAssessments, getDeletedAssessmentIds } = useAssessmentsStore();
   const [isJobSelectorOpen, setIsJobSelectorOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Load assessments from database on component mount
   useEffect(() => {
     const loadAssessmentsFromDatabase = async () => {
       try {
         setLoading(true);
+        setError(null);
         // Get assessments from IndexedDB
         const dbAssessments = await dbAPI.getAssessments();
-        
         // Get current assessments from Zustand store
         const storeAssessments = getAllAssessments();
-        
         // Get list of deleted assessment IDs
         const deletedIds = getDeletedAssessmentIds();
-        
         // Merge database assessments into store if they don't exist and weren't deleted
         if (dbAssessments && dbAssessments.length > 0) {
           const mergedAssessments = [...storeAssessments];
-          
           dbAssessments.forEach(dbAssessment => {
             // Skip if this assessment was deleted by the user
             if (deletedIds.includes(dbAssessment.id)) {
               return;
             }
-            
             // Check if this assessment already exists in the store
             const existsInStore = storeAssessments.some(
               storeAssessment => storeAssessment.id === dbAssessment.id
             );
-            
             if (!existsInStore) {
               // Add database assessment to the merged list
               mergedAssessments.push(dbAssessment);
             }
           });
-          
           // Update the store with the merged assessments
           if (mergedAssessments.length > storeAssessments.length) {
             setSavedAssessments(mergedAssessments);
           }
         }
       } catch (error) {
+        setError('Failed to load assessments');
       } finally {
         setLoading(false);
       }
@@ -281,8 +277,17 @@ const AssessmentsListPage = () => {
         </div>
       )}
 
+      {/* Error message: only show if error and no assessments loaded */}
+      {!loading && savedAssessments.length === 0 && error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <p className="text-red-800">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* Empty State */}
-      {!loading && savedAssessments.length === 0 && (
+      {!loading && savedAssessments.length === 0 && !error && (
         <Card>
           <CardContent className="text-center py-12 pt-16">
             <FileCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />

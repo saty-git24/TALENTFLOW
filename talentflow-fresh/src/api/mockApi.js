@@ -9,15 +9,19 @@ const MSW_ERROR_RATE = typeof import.meta !== 'undefined' && import.meta.env && 
   ? Number(import.meta.env.VITE_MSW_ERROR_RATE)
   : 0; // Temporarily disabled error simulation (was 0.08 / 8%)
 
-// Simplified API response - no artificial delays, just error simulation if needed
+// API response with random latency (200-1200ms) and random error (5-10%)
 const createApiResponse = async (handler) => {
-  // Skip delays entirely for better development experience
-  if (simulateNetworkError(MSW_ERROR_RATE)) {
+  // Random error: 5-10% chance
+  const errorChance = 0.05 + Math.random() * 0.05; // 0.05 to 0.10
+  if (Math.random() < errorChance) {
+    await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 1000));
     throw new Error('Simulated network error');
   }
-  
+  // Random latency: 200-1200ms
+  await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 1000));
   return await handler();
 };
+
 
 // Kanban operations - same as regular but dedicated for clarity
 const createKanbanApiResponse = async (handler) => {

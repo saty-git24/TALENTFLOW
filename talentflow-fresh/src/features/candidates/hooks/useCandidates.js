@@ -34,6 +34,9 @@ export const useCandidates = (initialFilters = {}) => {
       pageSize: pagination.pageSize
     };
 
+    // Clear error at the start of fetch
+    clearError();
+
     await makeRequest(
       () => candidatesApi.getCandidates(params),
       {
@@ -49,7 +52,7 @@ export const useCandidates = (initialFilters = {}) => {
         }
       }
     );
-  }, [filters, pagination.currentPage, pagination.pageSize, makeRequest, setCandidates, setPagination, setError, initialLoad]);
+  }, [filters, pagination.currentPage, pagination.pageSize, makeRequest, setCandidates, setPagination, setError, clearError, initialLoad]);
 
   // Create new candidate
   const createCandidate = useCallback(async (candidateData) => {
