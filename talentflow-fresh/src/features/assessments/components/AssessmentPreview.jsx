@@ -226,19 +226,22 @@ export const AssessmentPreview = ({ assessment, isLivePreview = true }) => {
       case QUESTION_TYPES.SINGLE_CHOICE:
         input = (
           <div className="space-y-2">
-            {question.options?.map((option) => (
-              <label key={option.id} className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200">
-                <input
-                  type="radio"
-                  name={question.id}
-                  value={option.value}
-                  checked={response?.value === option.value}
-                  onChange={() => handleResponse(question.id, option.value)}
-                  className="text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4"
-                />
-                <span className="font-medium text-gray-900 dark:text-white">{option.label || option.text}</span>
-              </label>
-            ))}
+            {question.options?.map((option, idx) => {
+              const display = option.text || option.value || String(option);
+              return (
+                <label key={option.id || idx} className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200">
+                  <input
+                    type="radio"
+                    name={question.id}
+                    value={option.value}
+                    checked={response?.value === option.value}
+                    onChange={() => handleResponse(question.id, option.value)}
+                    className="text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4"
+                  />
+                  <span className="font-medium text-gray-900 dark:text-white">{display}</span>
+                </label>
+              );
+            })}
           </div>
         );
         break;
@@ -246,10 +249,11 @@ export const AssessmentPreview = ({ assessment, isLivePreview = true }) => {
       case QUESTION_TYPES.MULTI_CHOICE:
         input = (
           <div className="space-y-2">
-            {question.options?.map((option) => {
+            {question.options?.map((option, idx) => {
               const selectedValues = Array.isArray(response?.value) ? response.value : [];
+              const display = option.text || option.value || String(option);
               return (
-                <label key={option.id} className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200">
+                <label key={option.id || idx} className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200">
                   <input
                     type="checkbox"
                     value={option.value}
@@ -262,7 +266,7 @@ export const AssessmentPreview = ({ assessment, isLivePreview = true }) => {
                     }}
                     className="text-blue-600 focus:ring-blue-500 focus:ring-2 w-4 h-4"
                   />
-                  <span className="font-medium text-gray-900 dark:text-white">{option.label || option.text}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{display}</span>
                 </label>
               );
             })}

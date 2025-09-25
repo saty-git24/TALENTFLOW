@@ -105,6 +105,20 @@ export const useAssessmentsStore = create(
           if (saved) {
             try {
               const assessment = JSON.parse(saved);
+              // Patch: Ensure all options have both text and value fields
+              if (assessment.sections) {
+                assessment.sections.forEach(section => {
+                  section.questions?.forEach(question => {
+                    if (Array.isArray(question.options)) {
+                      question.options = question.options.map(opt => ({
+                        text: opt.text,
+                        value: opt.value ?? opt.text,
+                        id: opt.id ?? undefined
+                      }));
+                    }
+                  });
+                });
+              }
               set({ builderState: assessment });
               return assessment;
             } catch (error) {

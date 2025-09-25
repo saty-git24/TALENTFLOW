@@ -80,8 +80,8 @@ export const QuestionBuilder = ({
     addQuestionOption(question.id, newOptionText);
   }, [question.id, question.options, addQuestionOption]);
 
-  const handleUpdateOption = useCallback((optionId, field, value) => {
-    updateQuestionOption(question.id, optionId, field, value);
+  const handleUpdateOption = useCallback((optionId, updates) => {
+    updateQuestionOption(question.id, optionId, updates);
   }, [question.id, updateQuestionOption]);
 
   const handleRemoveOption = useCallback((optionId) => {
@@ -125,18 +125,12 @@ export const QuestionBuilder = ({
           {(question.options || []).map((option, index) => (
             <div key={option.id || index} className="flex items-center gap-2 p-2 border border-gray-200 rounded bg-white dark:bg-gray-800">
               <span className="text-sm text-gray-500 w-8">{index + 1}.</span>
-              <Input
-                value={option.text || ''}
-                onChange={(e) => handleUpdateOption(option.id, 'text', e.target.value)}
-                placeholder={`Option ${index + 1}`}
-                className="flex-1"
-              />
-              <Input
-                value={option.value || ''}
-                onChange={(e) => handleUpdateOption(option.id, 'value', e.target.value)}
-                placeholder="value"
-                className="w-24 text-xs"
-              />
+                <Input
+                  value={option.text || option.value || ''}
+                  onChange={(e) => handleUpdateOption(option.id, { text: e.target.value, value: e.target.value })}
+                  placeholder={`Option ${index + 1}`}
+                  className="flex-1"
+                />
               {(question.options || []).length > 2 && (
                 <Button
                   variant="ghost"
@@ -382,7 +376,7 @@ export const QuestionBuilder = ({
                 </label>
                 <Select
                   value={question.type}
-                  onValueChange={handleTypeChange}
+                  onChange={e => handleTypeChange(e.target.value)}
                   options={Object.entries(QUESTION_TYPE_LABELS).map(([value, label]) => ({
                     value,
                     label
@@ -436,27 +430,7 @@ export const QuestionBuilder = ({
               {renderQuestionTypeSpecificInputs()}
             </div>
 
-            {/* Advanced Options */}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowValidation(!showValidation)}
-                className={showValidation ? 'bg-blue-50 text-blue-700' : ''}
-              >
-                <Settings className="w-3 h-3 mr-1" />
-                Validation
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowConditional(!showConditional)}
-                className={showConditional ? 'bg-blue-50 text-blue-700' : ''}
-              >
-                <Settings className="w-3 h-3 mr-1" />
-                Conditional Logic
-              </Button>
-            </div>
+            {/* Advanced Options removed */}
 
             {/* Validation Settings */}
             {renderValidationSettings()}

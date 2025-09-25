@@ -40,7 +40,11 @@ export const Select = React.forwardRef(({
           'dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 dark:focus:bg-gray-600',
           error && 'border-red-400 dark:border-red-500 text-red-900 dark:text-red-100 bg-red-50 dark:bg-red-900/20 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20 dark:focus:ring-red-400/20'
         )}
-        {...props}
+        onChange={props.onChange}
+        value={props.value}
+        name={props.name}
+        disabled={props.disabled}
+        required={props.required}
       >
         {placeholder && (
           <option value="" className="text-gray-600 dark:text-gray-300 py-3">

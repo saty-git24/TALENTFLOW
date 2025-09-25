@@ -9,6 +9,24 @@ const MSW_ERROR_RATE = typeof import.meta !== 'undefined' && import.meta.env && 
   ? Number(import.meta.env.VITE_MSW_ERROR_RATE)
   : 0; // Temporarily disabled error simulation (was 0.08 / 8%)
 
+// Patch: Ensure all loaded assessments/questions have options arrays with text/value for choice questions
+function patchAssessmentOptions(assessment) {
+  if (assessment?.sections) {
+    assessment.sections.forEach(section => {
+      section.questions?.forEach(question => {
+        if ((question.type === 'single_choice' || question.type === 'multi_choice') && Array.isArray(question.options)) {
+          question.options = question.options.map(opt => ({
+            text: opt.text,
+            value: opt.value ?? opt.text,
+            id: opt.id ?? undefined
+          }));
+        }
+      });
+    });
+  }
+  return assessment;
+}
+
 // API response with random latency (200-1200ms) and random error (5-10%)
 const createApiResponse = async (handler) => {
   // Random error: 5-10% chance
@@ -19,7 +37,18 @@ const createApiResponse = async (handler) => {
   }
   // Random latency: 200-1200ms
   await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 1000));
-  return await handler();
+  const result = await handler();
+  // Patch result if it's an assessment or array of assessments
+  if (result && typeof result === 'object') {
+    if (Array.isArray(result.assessments)) {
+      result.assessments = result.assessments.map(patchAssessmentOptions);
+    } else if (result.assessment) {
+      result.assessment = patchAssessmentOptions(result.assessment);
+    } else if (result.sections) {
+      patchAssessmentOptions(result);
+    }
+  }
+  return result;
 };
 
 
@@ -169,8 +198,12 @@ const jobsHandlers = [
   http.get('/api/jobs/:id', async ({ params }) => {
     try {
       const result = await createApiResponse(async () => {
-        const id = params.id;
-        const job = await db.jobs.where('id').equals(id).first();
+        let id = params.id;
+        // Try as number, then as string
+        let job = await db.jobs.where('id').equals(id).first();
+        if (!job && !isNaN(Number(id))) {
+          job = await db.jobs.where('id').equals(Number(id)).first();
+        }
         if (!job) {
           throw new Error('Job not found');
         }
